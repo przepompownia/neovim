@@ -1369,12 +1369,17 @@ describe('inccommand on ex mode', function()
     local screen
     screen = Screen.new(60, 10)
     screen:attach()
-    local id = funcs.termopen(
-      { nvim_prog, '-u', 'NONE', '-c', 'set termguicolors', '-E', 'test/README.md' },
-      {
-        env = { VIMRUNTIME = os.getenv('VIMRUNTIME') },
-      }
-    )
+    local id = funcs.termopen({
+      nvim_prog,
+      '-u',
+      'NONE',
+      '-c',
+      'set termguicolors background=dark',
+      '-E',
+      'test/README.md',
+    }, {
+      env = { VIMRUNTIME = os.getenv('VIMRUNTIME') },
+    })
     funcs.chansend(id, '%s/N')
     screen:expect {
       grid = [[

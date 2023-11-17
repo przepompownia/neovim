@@ -119,6 +119,7 @@ struct terminal {
   //  - convert VTermScreen cell arrays into utf8 strings
   //  - receive data from libvterm as a result of key presses.
   char textbuf[0x1fff];
+  VTermStateFallbacks fallbacks;
 
   ScrollbackLine **sb_buffer;       // Scrollback storage.
   size_t sb_current;                // Lines stored in sb_buffer.
@@ -192,6 +193,34 @@ static void term_output_callback(const char *s, size_t len, void *user_data)
   terminal_send((Terminal *)user_data, s, len);
 }
 
+static int parse_osc(int command, VTermStringFragment frag, void *user)
+{
+  // Check for an OSC foreground/background color request, and respond
+  // accordingly.
+  bool fg_request = command == 10;
+  bool bg_request = command == 11;
+  if (fg_request || bg_request) {
+    // WARN: This does not return the actual foreground/background color, but
+    // rather returns:
+    //   - fg=white/bg=black when Nvim option 'background' is 'dark'
+    //   - fg=black/bg=white when Nvim option 'background' is 'light'
+    OptVal op_background = get_option_value(kOptBackground, OPT_GLOBAL);
+    bool bg_option_dark = strncmp(op_background.data.string.data, "dark", 4) == 0;
+    optval_free(op_background);
+    Terminal *term = user;
+    int red = 0x00, green = 0x00, blue = 0x00;
+    if ((fg_request && bg_option_dark) || (bg_request && !bg_option_dark)) {
+      red = green = blue = 0xff;
+    }
+    char data[25];
+    snprintf(data, sizeof(data), "\x1b]%d;rgb:%02x%02x/%02x%02x/%02x%02x\x07",
+             command, red, red, green, green, blue, blue);
+    terminal_send(term, S_LEN(data));
+    return 1;
+  }
+  return 0;
+}
+
 // public API {{{
 
 /// Initializes terminal properties, and triggers TermOpen.
@@ -216,6 +245,10 @@ void terminal_open(Terminal **termpp, buf_T *buf, TerminalOptions opts)
   vterm_set_utf8(rv->vt, 1);
   // Setup state
   VTermState *state = vterm_obtain_state(rv->vt);
+  // Register OSC fallback
+  rv->fallbacks.osc = parse_osc;
+  vterm_state_set_unrecognised_fallbacks(state, &(rv->fallbacks), rv);
+
   // Set up screen
   rv->vts = vterm_obtain_screen(rv->vt);
   vterm_screen_enable_altscreen(rv->vts, true);
