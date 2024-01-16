@@ -20,6 +20,7 @@
 #include "nvim/map_defs.h"
 #include "nvim/marktree.h"
 #include "nvim/memory.h"
+#include "nvim/message.h"
 #include "nvim/move.h"
 #include "nvim/option_vars.h"
 #include "nvim/pos_defs.h"
@@ -840,14 +841,20 @@ void buf_signcols_count_range(buf_T *buf, int row1, int row2, int add, TriState 
 
   // For each row increment "b_signcols.count" at the number of counted signs,
   // and decrement at the previous number of signs. These two operations are
-  // split in separate calls if "clear" is not kNone (surrounding a marktree splice).
+  // split in separate calls if "clear" is not kFalse (surrounding a marktree splice).
   for (int i = 0; i < row2 + 1 - row1; i++) {
-    int width = MIN(SIGN_SHOW_MAX, count[i] - add);
-    if (clear != kNone && width > 0) {
-      buf->b_signcols.count[width - 1]--;
-      assert(buf->b_signcols.count[width - 1] >= 0);
+    int prevwidth = MIN(SIGN_SHOW_MAX, count[i] - add);
+    if (clear != kNone && prevwidth > 0) {
+      if (buf->b_signcols.count[prevwidth - 1] > 0) {
+        buf->b_signcols.count[prevwidth - 1]--;
+      } else {  // Shouldn't happen, but not worth abort()ing over.
+        buf->b_signcols.count[prevwidth - 1] = 0;
+#ifndef NDEBUG
+        emsg("buf->b_signcols.count < 0");
+#endif
+      }
     }
-    width = MIN(SIGN_SHOW_MAX, count[i]);
+    int width = MIN(SIGN_SHOW_MAX, count[i]);
     if (clear != kTrue && width > 0) {
       buf->b_signcols.count[width - 1]++;
       if (width > buf->b_signcols.max) {
