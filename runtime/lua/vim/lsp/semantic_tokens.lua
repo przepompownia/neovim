@@ -99,11 +99,12 @@ local function tokens_to_ranges(data, bufnr, client, request)
   local legend = client.server_capabilities.semanticTokensProvider.legend
   local token_types = legend.tokenTypes
   local token_modifiers = legend.tokenModifiers
+  local encoding = client.offset_encoding
   local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
   local ranges = {} ---@type STTokenRange[]
 
   local start = uv.hrtime()
-  local ms_to_ns = 1000 * 1000
+  local ms_to_ns = 1e6
   local yield_interval_ns = 5 * ms_to_ns
   local co, is_main = coroutine.running()
 
@@ -135,14 +136,13 @@ local function tokens_to_ranges(data, bufnr, client, request)
 
     -- data[i+3] +1 because Lua tables are 1-indexed
     local token_type = token_types[data[i + 3] + 1]
-    local modifiers = modifiers_from_number(data[i + 4], token_modifiers)
-
-    local end_char = start_char + data[i + 2]
-    local buf_line = lines and lines[line + 1] or ''
-    local start_col = vim.str_byteindex(buf_line, client.offset_encoding, start_char, false)
-    local end_col = vim.str_byteindex(buf_line, client.offset_encoding, end_char, false)
 
     if token_type then
+      local modifiers = modifiers_from_number(data[i + 4], token_modifiers)
+      local end_char = start_char + data[i + 2]
+      local buf_line = lines and lines[line + 1] or ''
+      local start_col = vim.str_byteindex(buf_line, encoding, start_char, false)
+      local end_col = vim.str_byteindex(buf_line, encoding, end_char, false)
       ranges[#ranges + 1] = {
         line = line,
         start_col = start_col,
@@ -273,7 +273,7 @@ function STHighlighter:send_request()
     if client and current_result.version ~= version and active_request.version ~= version then
       -- cancel stale in-flight request
       if active_request.request_id then
-        client.cancel_request(active_request.request_id)
+        client:cancel_request(active_request.request_id)
         active_request = {}
         state.active_request = active_request
       end
@@ -288,7 +288,7 @@ function STHighlighter:send_request()
         method = method .. '/delta'
         params.previousResultId = current_result.result_id
       end
-      local success, request_id = client.request(method, params, function(err, response, ctx)
+      local success, request_id = client:request(method, params, function(err, response, ctx)
         -- look client up again using ctx.client_id instead of using a captured
         -- client object
         local c = vim.lsp.get_client_by_id(ctx.client_id)
@@ -519,7 +519,7 @@ function STHighlighter:reset()
     if state.active_request.request_id then
       local client = vim.lsp.get_client_by_id(client_id)
       assert(client)
-      client.cancel_request(state.active_request.request_id)
+      client:cancel_request(state.active_request.request_id)
       state.active_request = {}
     end
   end
@@ -547,7 +547,7 @@ function STHighlighter:mark_dirty(client_id)
   if state.active_request.request_id then
     local client = vim.lsp.get_client_by_id(client_id)
     assert(client)
-    client.cancel_request(state.active_request.request_id)
+    client:cancel_request(state.active_request.request_id)
     state.active_request = {}
   end
 end

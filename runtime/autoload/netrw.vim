@@ -34,6 +34,10 @@
 "   2024 Oct 31 by Vim Project: fix E874 when browsing remote dir (#15964)
 "   2024 Nov 07 by Vim Project: use keeppatterns to prevent polluting the search history
 "   2024 Nov 07 by Vim Project: fix a few issues with netrw tree listing (#15996)
+"   2024 Nov 10 by Vim Project: directory symlink not resolved in tree view (#16020)
+"   2024 Nov 14 by Vim Project: small fixes to netrw#BrowseX (#16056)
+"   2024 Nov 23 by Vim Project: update decompress defaults (#16104)
+"   2024 Nov 23 by Vim Project: fix powershell escaping issues (#16094)
 "   }}}
 " Former Maintainer:	Charles E Campbell
 " GetLatestVimScripts: 1075 1 :AutoInstall: netrw.vim
@@ -358,7 +362,39 @@ call s:NetrwInit("g:netrw_cygdrive","/cygdrive")
 " Default values - d-g ---------- {{{3
 call s:NetrwInit("s:didstarstar",0)
 call s:NetrwInit("g:netrw_dirhistcnt"      , 0)
-call s:NetrwInit("g:netrw_decompress"       , '{ ".gz" : "gunzip", ".bz2" : "bunzip2", ".zip" : "unzip", ".tar" : "tar -xf", ".xz" : "unxz" }')
+let s:xz_opt = has('unix') ? "XZ_OPT=-T0" :
+		\ (has("win32") && &shell =~? '\vcmd(\.exe)?$' ?
+		\ "setx XZ_OPT=-T0 &&" : "")
+call s:NetrwInit("g:netrw_decompress ", "{"
+            \ .."'.lz4':      'lz4 -d',"
+            \ .."'.lzo':      'lzop -d',"
+            \ .."'.lz':       'lzip -dk',"
+            \ .."'.7z':       '7za x',"
+            \ .."'.001':      '7za x',"
+            \ .."'.zip':      'unzip',"
+            \ .."'.bz':       'bunzip2 -k',"
+            \ .."'.bz2':      'bunzip2 -k',"
+            \ .."'.gz':       'gunzip -k',"
+            \ .."'.lzma':     'unlzma -T0 -k',"
+            \ .."'.xz':       'unxz -T0 -k',"
+            \ .."'.zst':      'zstd -T0 -d',"
+            \ .."'.Z':        'uncompress -k',"
+            \ .."'.tar':      'tar -xvf',"
+            \ .."'.tar.bz':   'tar -xvjf',"
+            \ .."'.tar.bz2':  'tar -xvjf',"
+            \ .."'.tbz':      'tar -xvjf',"
+            \ .."'.tbz2':     'tar -xvjf',"
+            \ .."'.tar.gz':   'tar -xvzf',"
+            \ .."'.tgz':      'tar -xvzf',"
+            \ .."'.tar.lzma': '"..s:xz_opt.." tar -xvf --lzma',"
+            \ .."'.tlz':      '"..s:xz_opt.." tar -xvf --lzma',"
+            \ .."'.tar.xz':   '"..s:xz_opt.." tar -xvfJ',"
+            \ .."'.txz':      '"..s:xz_opt.." tar -xvfJ',"
+            \ .."'.tar.zst':  '"..s:xz_opt.." tar -xvf --use-compress-program=unzstd',"
+            \ .."'.tzst':     '"..s:xz_opt.." tar -xvf --use-compress-program=unzstd',"
+            \ .."'.rar':      '"..(executable("unrar")?"unrar x -ad":"rar x -ad").."'"
+            \ .."}")
+unlet s:xz_opt
 call s:NetrwInit("g:netrw_dirhistmax"       , 10)
 call s:NetrwInit("g:netrw_fastbrowse"       , 1)
 call s:NetrwInit("g:netrw_ftp_browse_reject", '^total\s\+\d\+$\|^Trying\s\+\d\+.*$\|^KERBEROS_V\d rejected\|^Security extensions not\|No such file\|: connect to address [0-9a-fA-F:]*: No route to host$')
@@ -4580,6 +4616,12 @@ fun! s:NetrwBrowseChgDir(islocal,newdir,cursor,...)
   if a:cursor && exists("w:netrw_liststyle") && w:netrw_liststyle == s:TREELIST && exists("w:netrw_treetop")
    " dirname is the path to the word under the cursor
    let dirname = s:NetrwTreePath(w:netrw_treetop)
+   " newdir resolves to a directory and points to a directory in dirname
+   " /tmp/test/folder_symlink/ -> /tmp/test/original_folder/
+   if a:islocal && fnamemodify(dirname, ':t') == newdir && isdirectory(resolve(dirname)) && resolve(dirname) == resolve(newdir)
+    let dirname = fnamemodify(resolve(dirname), ':p:h:h')
+    let newdir = fnamemodify(resolve(newdir), ':t')
+   endif
    " Remove trailing "/"
    let dirname = substitute(dirname, "/$", "", "")
 
@@ -4992,7 +5034,7 @@ if has('unix')
     let args = a:args
     exe 'silent !' ..
       \ ((args =~? '\v<\f+\.(exe|com|bat|cmd)>') ?
-      \ 'cmd.exe /c start "" /b ' .. args :
+      \ 'cmd.exe /c start /b ' .. args :
       \ 'nohup ' .. args .. ' ' .. s:redir() .. ' &')
       \ | redraw!
   endfun
@@ -5071,10 +5113,7 @@ endif
 "              given filename; typically this means given their extension.
 "              0=local, 1=remote
 fun! netrw#BrowseX(fname,remote)
-  if a:remote == 0 && isdirectory(a:fname)
-   " if its really just a local directory, then do a "gf" instead
-   exe "e ".a:fname
-  elseif a:remote == 1 && a:fname !~ '^https\=:' && a:fname =~ '/$'
+  if a:remote == 1 && a:fname !~ '^https\=:' && a:fname =~ '/$'
    " remote directory, not a webpage access, looks like an attempt to do a directory listing
    norm! gf
   endif
@@ -6490,7 +6529,6 @@ fun! s:NetrwMarkFileArgList(islocal,tomflist)
     NetrwKeepj call winrestview(svpos)
    endif
   endif
-
 endfun
 
 " ---------------------------------------------------------------------
@@ -6516,7 +6554,7 @@ fun! s:NetrwMarkFileCompress(islocal)
 
    " for every filename in the marked list
    for fname in s:netrwmarkfilelist_{curbufnr}
-    let sfx= substitute(fname,'^.\{-}\(\.\a\+\)$','\1','')
+    let sfx= substitute(fname,'^.\{-}\(\.[[:alnum:]]\+\)$','\1','')
     if exists("g:netrw_decompress['".sfx."']")
      " fname has a suffix indicating that its compressed; apply associated decompression routine
      let exe= g:netrw_decompress[sfx]
@@ -11276,9 +11314,7 @@ endfun
 " ---------------------------------------------------------------------
 " s:NetrwExe: executes a string using "!" {{{2
 fun! s:NetrwExe(cmd)
-"  call Dfunc("s:NetrwExe(a:cmd<".a:cmd.">)")
-  if has("win32")
-"    call Decho("using win32:",expand("<slnum>"))
+  if has("win32") && exepath(&shell) !~? '\v[\/]?(cmd|pwsh|powershell)(\.exe)?$' && !g:netrw_cygwin
     let savedShell=[&shell,&shellcmdflag,&shellxquote,&shellxescape,&shellquote,&shellpipe,&shellredir,&shellslash]
     set shell& shellcmdflag& shellxquote& shellxescape&
     set shellquote& shellpipe& shellredir& shellslash&
@@ -11288,13 +11324,11 @@ fun! s:NetrwExe(cmd)
       let [&shell,&shellcmdflag,&shellxquote,&shellxescape,&shellquote,&shellpipe,&shellredir,&shellslash] = savedShell
     endtry
   else
-"   call Decho("exe ".a:cmd,'~'.expand("<slnum>"))
    exe a:cmd
   endif
   if v:shell_error
    call netrw#ErrorMsg(s:WARNING,"shell signalled an error",106)
   endif
-"  call Dret("s:NetrwExe : v:shell_error=".v:shell_error)
 endfun
 
 " ---------------------------------------------------------------------
