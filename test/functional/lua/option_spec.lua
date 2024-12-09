@@ -149,7 +149,7 @@ describe('lua stdlib', function()
         vim.api.nvim_buf_set_var(0, 'nullvar', vim.NIL)
         vim.api.nvim_buf_set_var(0, 'to_delete', { hello = 'world' })
         _G.BUF = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_var(BUF, 'testing', 'bye')
+        vim.api.nvim_buf_set_var(_G.BUF, 'testing', 'bye')
       end)
 
       eq('hi', fn.luaeval 'vim.b.testing')
@@ -551,7 +551,7 @@ describe('lua stdlib', function()
       end)
 
       it('can set function values', function()
-        eq_exec_lua('v:lua.vim._func_opts.tagfunc_1', function()
+        eq_exec_lua('v:lua.vim.b[1]._func_opts.tagfunc', function()
           vim.bo.tagfunc = function() end
           return vim.bo.tagfunc
         end)

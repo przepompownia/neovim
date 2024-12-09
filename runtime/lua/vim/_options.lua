@@ -214,22 +214,21 @@ local function apply_func_opt(name, value, info, opts)
   else
     assert(info.scope == 'win')
     local win = resolve_win(opts.win)
+    if fvalue then
+      vim.w[win]._func_opts = vim.w[win]._func_opts or {}
+    end
     if opts.scope == 'local' then
       local buf = vim._resolve_bufnr(opts.buf)
       if fvalue then
-        vim.w[win]._func_opts_local = vim.w[win]._func_opts_local or {}
-        --- @diagnostic disable-next-line:no-unknown
-        vim.w[win]._func_opts_local[buf] = vim.w[win]._func_opts_local[buf] or {}
+        --- @type table<string,function?>
+        vim.w[win]._func_opts[buf] = vim.w[win]._func_opts[buf] or {}
       end
-      if vim.w[win]._func_opts_local then
-        --- @diagnostic disable:no-unknown
-        t = vim.w[win]._func_opts_local[buf]
+      if vim.w[win]._func_opts then
+        --- @type table<string,function?>
+        t = vim.w[win]._func_opts[buf]
       end
-      t_str = ('vim.w[%d]._func_opts_local[%d]'):format(win, buf)
+      t_str = ('vim.w[%d]._func_opts[%d]'):format(win, buf)
     else
-      if fvalue then
-        vim.w[win]._func_opts = vim.w[win]._func_opts or {}
-      end
       t = vim.w[win]._func_opts
       t_str = ('vim.w[%d].__func_opts'):format(win)
     end
