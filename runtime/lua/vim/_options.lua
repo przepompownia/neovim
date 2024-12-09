@@ -134,37 +134,41 @@ local function get_options_info(name)
   return info
 end
 
---- @type table<string,function>
-vim._func_opts = {}
-
--- Options that can be set as a function
 local func_opts = {
-  completefunc = true,
-  findfunc = true,
-  omnifunc = true,
-  operatorfunc = true,
-  quickfixtextfunc = true,
-  tagfunc = true,
-  thesaurusfunc = true,
-}
+  -- Options that can be set as a function
+  func = {
+    completefunc = true,
+    findfunc = true,
+    omnifunc = true,
+    operatorfunc = true,
+    quickfixtextfunc = true,
+    tagfunc = true,
+    thesaurusfunc = true,
+  },
 
--- Options that can be set as an expression
-local expr_opts = {
-  diffexpr = true,
-  foldexpr = true,
-  formatexpr = true,
-  includeexpr = true,
-  indentexpr = true,
-  modelineexpr = true,
-  patchexpr = true,
-}
+  -- Options that can be set as an expression
+  expr = {
+    diffexpr = true,
+    foldexpr = true,
+    formatexpr = true,
+    includeexpr = true,
+    indentexpr = true,
+    modelineexpr = true,
+    patchexpr = true,
+  },
 
--- Options that can be set as an expression with a prefix of '%!'
-local pct_bang_expr_opts = {
-  statuscolumn = true,
-  statusline = true,
-  tabline = true,
-  winbar = true,
+  -- Options that can be set as an expression with a prefix of '%!'
+  pct_bang_expr = {
+    statuscolumn = true,
+    statusline = true,
+    tabline = true,
+    winbar = true,
+  },
+
+  -- Options that can be set as an ex command if prefixed with ':'
+  ex_cmd_expr = {
+    keywordprg = true,
+  },
 }
 
 --- @param v integer?
@@ -175,7 +179,12 @@ local function resolve_winbuf(v, f)
 end
 
 --- @type table<string,boolean>
-local all_func_opts = vim.tbl_extend('error', func_opts, expr_opts, pct_bang_expr_opts)
+local all_func_opts = {}
+for _, v in pairs(func_opts) do
+  for k in pairs(v) do
+    all_func_opts[k] = true
+  end
+end
 
 --- If the option name is a function option convert it to a string
 --- format and store the function value.
@@ -227,9 +236,10 @@ local function apply_func_opt(name, value, info, opts)
   end
 
   -- some expressions must begin with '%!'
-  local pct_bang_pfx = pct_bang_expr_opts[name] ~= nil and '%!' or ''
-  local call_sfx = func_opts[name] and '' or '()'
-  return ('%sv:lua.%s.%s%s'):format(pct_bang_pfx, t_str, name, call_sfx)
+  local pct_bang_pfx = func_opts.pct_bang_expr[name] ~= nil and '%!' or ''
+  local ex_cmd_pfx = func_opts.ex_cmd_expr[name] ~= nil and ':call ' or ''
+  local call_sfx = func_opts.func[name] and '' or '()'
+  return ('%s%sv:lua.%s.%s%s'):format(ex_cmd_pfx, pct_bang_pfx, t_str, name, call_sfx)
 end
 
 --- @param name string
