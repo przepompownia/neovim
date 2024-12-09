@@ -172,10 +172,9 @@ local func_opts = {
 }
 
 --- @param v integer?
---- @param f fun():integer
 --- @return integer
-local function resolve_winbuf(v, f)
-  return assert((not v or v == 0) and f() or v)
+local function resolve_win(v)
+  return assert((not v or v == 0) and api.nvim_get_current_win() or v)
 end
 
 --- @type table<string,boolean>
@@ -196,29 +195,41 @@ local function apply_func_opt(name, value, info, opts)
   local t = nil
   local t_str --- @type string?
 
+  local fvalue = type(value) == 'function' and value or nil
+
   -- Find a table to store/clear the function
   if info.scope == 'global' or info.global_local and opts.scope == 'global' then
-    vim.g._func_opts = vim.g._func_opts or {}
+    if fvalue then
+      vim.g._func_opts = vim.g._func_opts or {}
+    end
     t = vim.g._func_opts
     t_str = 'vim.g._func_opts'
   elseif info.scope == 'buf' then
-    local buf = resolve_winbuf(opts.buf, api.nvim_get_current_buf)
-    vim.b[buf]._func_opts = vim.b[buf]._func_opts or {}
+    local buf = vim._resolve_bufnr(opts.buf)
+    if fvalue then
+      vim.b[buf]._func_opts = vim.b[buf]._func_opts or {}
+    end
     t = vim.b[buf]._func_opts
     t_str = ('vim.b[%d]._func_opts'):format(buf)
   else
     assert(info.scope == 'win')
-    local win = resolve_winbuf(opts.win, api.nvim_get_current_win)
+    local win = resolve_win(opts.win)
     if opts.scope == 'local' then
-      local buf = resolve_winbuf(opts.buf, api.nvim_get_current_buf)
-      vim.w[win]._func_opts_local = vim.w[win]._func_opts_local or {}
-      --- @diagnostic disable-next-line:no-unknown
-      vim.w[win]._func_opts_local[buf] = vim.w[win]._func_opts_local[buf] or {}
-      --- @diagnostic disable:no-unknown
-      t = vim.w[win]._func_opts_local[buf]
+      local buf = vim._resolve_bufnr(opts.buf)
+      if fvalue then
+        vim.w[win]._func_opts_local = vim.w[win]._func_opts_local or {}
+        --- @diagnostic disable-next-line:no-unknown
+        vim.w[win]._func_opts_local[buf] = vim.w[win]._func_opts_local[buf] or {}
+      end
+      if vim.w[win]._func_opts_local then
+        --- @diagnostic disable:no-unknown
+        t = vim.w[win]._func_opts_local[buf]
+      end
       t_str = ('vim.w[%d]._func_opts_local[%d]'):format(win, buf)
     else
-      vim.w[win]._func_opts = vim.w[win]._func_opts or {}
+      if fvalue then
+        vim.w[win]._func_opts = vim.w[win]._func_opts or {}
+      end
       t = vim.w[win]._func_opts
       t_str = ('vim.w[%d].__func_opts'):format(win)
     end
@@ -226,10 +237,10 @@ local function apply_func_opt(name, value, info, opts)
 
   --- @cast t table<string,function?>
 
-  local fvalue = type(value) == 'function' and value or nil
-
-  -- Note fvalue as nil is used to GC
-  t[name] = fvalue
+  if t then
+    -- Note fvalue as nil is used to GC
+    t[name] = fvalue
+  end
 
   if not fvalue then
     return value
