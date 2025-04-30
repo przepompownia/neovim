@@ -8796,7 +8796,7 @@ describe('builtin popupmenu', function()
           endfunc
           set omnifunc=Omni_test
           set completeopt-=preview
-          set completepopup=border:rounded
+          set winborder=rounded
         ]])
       end)
 
@@ -9144,17 +9144,6 @@ describe('builtin popupmenu', function()
             ]],
           })
         end
-      end)
-
-      it('wrong value in option', function()
-        eq(
-          'Vim(set):invalid border style "foo"',
-          pcall_err(command, 'set completepopup=border:foo')
-        )
-        eq(
-          'Vim(set):E474: Invalid argument: completepopup=align:foo',
-          pcall_err(command, 'set  completepopup=align:foo')
-        )
       end)
     end)
   end

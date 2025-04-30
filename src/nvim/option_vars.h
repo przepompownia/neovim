@@ -314,8 +314,6 @@ EXTERN unsigned cot_flags;      ///< flags from 'completeopt'
 #define COT_NOSELECT    0x040  // false: select & insert, true: noselect
 #define COT_FUZZY       0x080  // true: fuzzy match enabled
 
-EXTERN char *p_cpp;             ///< 'completepopup'
-
 #ifdef BACKSLASH_IN_FILENAME
 EXTERN char *p_csl;             ///< 'completeslash'
 #endif

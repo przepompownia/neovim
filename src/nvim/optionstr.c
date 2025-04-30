@@ -947,26 +947,6 @@ const char *did_set_completeopt(optset_T *args FUNC_ATTR_UNUSED)
   return NULL;
 }
 
-const char *did_set_completepopup(optset_T *args FUNC_ATTR_UNUSED)
-{
-  WinConfig config = WIN_CONFIG_INIT;
-  bool result = parse_completepopup(&config, false);
-  if (pum_visible() && config.border && (config.title || config.footer)) {
-    pum_grid_draw_border(&config, true);
-  }
-
-  if (config.title) {
-    clear_virttext(&config.title_chunks);
-  }
-  if (config.footer) {
-    clear_virttext(&config.footer_chunks);
-  }
-  if (!result) {
-    return e_invarg;
-  }
-  return NULL;
-}
-
 #ifdef BACKSLASH_IN_FILENAME
 /// The 'completeslash' option is changed.
 const char *did_set_completeslash(optset_T *args)
