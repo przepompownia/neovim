@@ -1,3 +1,23 @@
+--- @brief
+---
+---WARNING: This is an experimental interface intended to replace the message
+---grid in the TUI.
+---
+---To enable the experimental UI (default opts shown):
+---```lua
+---require('vim._extui').enable({
+---  enable = true, -- Whether to enable or disable the UI.
+---  msg = { -- Options related to the message module.
+---    ---@type 'box'|'cmd' Type of window used to place messages, either in the
+---    ---cmdline or in a separate message box window with ephemeral messages.
+---    pos = 'cmd',
+---    box = { -- Options related to the message box window.
+---      timeout = 4000, -- Time a message is visible.
+---    },
+---  },
+---})
+---```
+
 local api = vim.api
 local ext = require('vim._extui.shared')
 ext.msg = require('vim._extui.messages')
@@ -19,9 +39,11 @@ local function ui_callback(event, ...)
 end
 local scheduled_ui_callback = vim.schedule_wrap(ui_callback)
 
-M.enable = function(opts)
+---@nodoc
+function M.enable(opts)
   vim.validate('opts', opts, 'table', true)
   ext.cfg = vim.tbl_deep_extend('keep', opts, ext.cfg)
+
   if ext.cfg.enable == false then
     -- Detach and cleanup windows, buffers and autocommands.
     for _, tab in ipairs(api.nvim_list_tabpages()) do

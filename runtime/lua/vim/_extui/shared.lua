@@ -11,10 +11,12 @@ local M = {
   tab = 0, -- Current tabpage.
   cfg = {
     enable = true,
-    msg = {
-      pos = 'cmd', ---@type 'box'|'cmd'
-      box = {
-        timeout = 4000, -- Time a message is visible in box.
+    msg = { -- Options related to the message module.
+      ---@type 'box'|'cmd' Type of window used to place messages, either in the
+      ---cmdline or in a separate ephemeral message box window.
+      pos = 'cmd',
+      box = { -- Options related to the message box window.
+        timeout = 4000, -- Time a message is visible.
       },
     },
   },
@@ -26,13 +28,12 @@ local wincfg = { -- Default cfg for nvim_open_win().
   row = 1,
   width = 10000,
   height = 1,
-  focusable = false,
   noautocmd = true,
   zindex = 300,
 }
 
 --- Ensure the various buffers and windows have not been deleted.
-M.tab_check_wins = function()
+function M.tab_check_wins()
   M.tab = api.nvim_get_current_tabpage()
   if not M.wins[M.tab] then
     M.wins[M.tab] = { box = -1, cmd = -1, more = -1, prompt = -1 }
@@ -41,10 +42,13 @@ M.tab_check_wins = function()
   for _, type in ipairs({ 'box', 'cmd', 'more', 'prompt' }) do
     if not api.nvim_buf_is_valid(M.bufs[type]) then
       M.bufs[type] = api.nvim_create_buf(false, true)
-      -- Attach highlighter to the cmdline buffer.
       if type == 'cmd' then
+        -- Attach highlighter to the cmdline buffer.
         local parser = assert(vim.treesitter.get_parser(M.bufs.cmd, 'vim', {}))
         M.cmd.highlighter = vim.treesitter.highlighter.new(parser)
+      elseif type == 'more' then
+        -- Close more window with Ctrl-C.
+        vim.keymap.set('n', '<C-c>', '<C-w>c', { buffer = M.bufs.more })
       end
     end
 
@@ -53,11 +57,12 @@ M.tab_check_wins = function()
       local top = { vim.opt.fcs:get().horiz or o.ambw == 'single' and '─' or '-', 'WinSeparator' }
       local border = (type == 'more' or type == 'prompt') and { '', top, '', '', '', '', '', '' }
       local cfg = vim.tbl_deep_extend('force', wincfg, {
+        focusable = type == 'more',
         mouse = type ~= 'cmd' and true or nil,
         anchor = type ~= 'cmd' and 'SE' or nil,
         hide = type ~= 'cmd' or M.cmdheight == 0 or nil,
         title = type == 'more' and 'Messages' or nil,
-        border = type == 'box' and not o.termguicolors and 'single' or border or nil,
+        border = type == 'box' and not o.termguicolors and 'single' or border or 'none',
         _cmdline_offset = type == 'cmd' and 0 or nil,
       })
       M.wins[M.tab][type] = api.nvim_open_win(M.bufs[type], false, cfg)

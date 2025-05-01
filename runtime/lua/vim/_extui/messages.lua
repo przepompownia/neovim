@@ -140,6 +140,7 @@ local function set_virttext(type)
             end, 2000)
             return
           end
+
           -- Crop text on last screen row and find byte offset to place mark at.
           local vcol = h.end_vcol - (scol - M.cmd.last_col) ---@type integer
           col = vcol <= 0 and 0 or fn.virtcol2col(win, row + 1, vcol)
@@ -260,7 +261,7 @@ function M.show_msg(tar, content, replace_last, more)
       -- In block mode the cmdheight is already dynamic, so just print the full message
       -- regardless of height. Spoof cmdline_show to put cmdline below message.
       ext.cmd.row = ext.cmd.row + 1 + row - start_row
-      ext.cmd.cmdline_show({}, 0, ':', '', ext.cmd.indent)
+      ext.cmd.cmdline_show({}, 0, ':', '', ext.cmd.indent, 0, 0)
       api.nvim__redraw({ flush = true, cursor = true, win = ext.wins[ext.tab].cmd })
     else
       -- Place [+x] indicator for lines that spill over 'cmdheight'.
@@ -285,7 +286,7 @@ local replace_bufwrite = false
 ---@alias MsgChunk [integer, string, integer]
 ---@alias MsgContent MsgChunk[]
 ---@param content MsgContent
-M.msg_show = function(kind, content)
+function M.msg_show(kind, content)
   if kind == 'search_cmd' then
     -- Set the entered search command in the cmdline.
     api.nvim_buf_set_lines(ext.bufs.cmd, 0, -1, false, { content[1][2] })
@@ -324,12 +325,12 @@ M.msg_show = function(kind, content)
   end
 end
 
-M.msg_clear = function() end
+function M.msg_clear() end
 
 --- Place the mode text in the cmdline.
 ---
 ---@param content MsgContent
-M.msg_showmode = function(content)
+function M.msg_showmode(content)
   M.virt.last[M.virt.idx.mode] = content
   M.virt.last[M.virt.idx.search] = {}
   set_virttext('last')
@@ -338,7 +339,7 @@ end
 --- Place text from the 'showcmd' buffer in the cmdline.
 ---
 ---@param content MsgContent
-M.msg_showcmd = function(content)
+function M.msg_showcmd(content)
   local str = content[1] and content[1][2]:sub(-10) or ''
   M.virt.last[M.virt.idx.cmd][1] = (content[1] or M.virt.last[M.virt.idx.search][1])
     and { 0, str .. (' '):rep(11 - #str) }
@@ -348,7 +349,7 @@ end
 --- Place the 'ruler' text in the cmdline window.
 ---
 ---@param content MsgContent
-M.msg_ruler = function(content)
+function M.msg_ruler(content)
   M.virt.last[M.virt.idx.ruler] = content
   set_virttext('last')
 end
@@ -357,7 +358,7 @@ end
 --- Zoom in on the message window with the message history.
 ---
 ---@param entries MsgHistory[]
-M.msg_history_show = function(entries)
+function M.msg_history_show(entries)
   if #entries == 0 then
     return
   end
@@ -370,7 +371,7 @@ M.msg_history_show = function(entries)
   M.set_pos('more')
 end
 
-M.msg_history_clear = function() end
+function M.msg_history_clear() end
 
 --- Adjust dimensions of the message windows after certain events.
 ---
@@ -392,16 +393,6 @@ function M.set_pos(type)
       local row = (texth.all > height and texth.end_row or 0) + 1
       api.nvim_win_set_cursor(ext.wins[ext.tab].box, { row, 0 })
     elseif type == 'more' and api.nvim_get_current_win() ~= win then
-      -- Make more window the current window, hide it when it is no longer current.
-      api.nvim_create_autocmd('WinEnter', {
-        once = true,
-        callback = function()
-          if api.nvim_win_is_valid(win) then
-            api.nvim_win_set_config(win, { hide = true })
-          end
-        end,
-        desc = 'Hide inactive more window.',
-      })
       api.nvim_set_current_win(win)
     end
   end
