@@ -1313,9 +1313,7 @@ function lsp.buf_request(bufnr, method, params, handler, on_unsupported)
   local function _cancel_all_requests()
     for client_id, request_id in pairs(client_request_ids) do
       local client = all_clients[client_id]
-      if client.requests[request_id] then
-        client:cancel_request(request_id)
-      end
+      client:cancel_request(request_id)
     end
   end
 
