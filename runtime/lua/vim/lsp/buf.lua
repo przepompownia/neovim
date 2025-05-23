@@ -985,7 +985,7 @@ end
 --- @param workspace_folder? string
 function M.remove_workspace_folder(workspace_folder)
   workspace_folder = workspace_folder
-    or npcall(vim.fn.input, 'Workspace Folder: ', vim.fn.expand('%:p:h'))
+    or npcall(vim.fn.input, 'Workspace Folder: ', vim.fn.expand('%:p:h'), 'customlist,v:lua.vim.lsp.buf.list_workspace_folders')
   api.nvim_command('redraw')
   if not workspace_folder or #workspace_folder == 0 then
     return

@@ -93,9 +93,9 @@ end
 ---@param data integer[]
 ---@param bufnr integer
 ---@param client vim.lsp.Client
----@param request STActiveRequest
+---@param version integer
 ---@return STTokenRange[]
-local function tokens_to_ranges(data, bufnr, client, request)
+local function tokens_to_ranges(data, bufnr, client, version)
   local legend = client.server_capabilities.semanticTokensProvider.legend
   local token_types = legend.tokenTypes
   local token_modifiers = legend.tokenModifiers
@@ -119,7 +119,7 @@ local function tokens_to_ranges(data, bufnr, client, request)
         vim.schedule(function()
           coroutine.resume(co, util.buf_versions[bufnr])
         end)
-        if request.version ~= coroutine.yield() then
+        if version ~= coroutine.yield() then
           -- request became stale since the last time the coroutine ran.
           -- abandon it by yielding without a way to resume
           coroutine.yield()
@@ -299,8 +299,9 @@ function STHighlighter:send_request()
           return
         end
 
+        highlighter.client_state[c.id].active_request = {}
+
         if err or not response then
-          highlighter.client_state[c.id].active_request = {}
           return
         end
 
@@ -334,12 +335,12 @@ function STHighlighter:process_response(response, client, version)
     return
   end
 
-  -- ignore stale responses
-  if state.active_request.version and version ~= state.active_request.version then
+  if not api.nvim_buf_is_valid(self.bufnr) then
     return
   end
 
-  if not api.nvim_buf_is_valid(self.bufnr) then
+  -- ignore stale responses
+  if version ~= util.buf_versions[self.bufnr] then
     return
   end
 
@@ -369,10 +370,7 @@ function STHighlighter:process_response(response, client, version)
 
   -- convert token list to highlight ranges
   -- this could yield and run over multiple event loop iterations
-  local highlights = tokens_to_ranges(tokens, self.bufnr, client, state.active_request)
-
-  -- reset active request
-  state.active_request = {}
+  local highlights = tokens_to_ranges(tokens, self.bufnr, client, version)
 
   -- update the state with the new results
   local current_result = state.current_result
