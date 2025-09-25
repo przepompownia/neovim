@@ -66,17 +66,6 @@ function M.check_targets()
 
     if setopt then
       local name = { cmd = 'Cmd', dialog = 'Dialog', msg = 'Msg', pager = 'Pager' }
-      api.nvim_buf_set_name(M.bufs[type], ('[%s]'):format(name[type]))
-      api.nvim_set_option_value('swapfile', false, { buf = M.bufs[type] })
-      api.nvim_set_option_value('modifiable', true, { buf = M.bufs[type] })
-      api.nvim_set_option_value('bufhidden', 'hide', { buf = M.bufs[type] })
-      api.nvim_set_option_value('buftype', 'nofile', { buf = M.bufs[type] })
-      if type == 'pager' then
-        -- Close pager with `q`, same as `checkhealth`
-        api.nvim_buf_set_keymap(M.bufs.pager, 'n', 'q', '<Cmd>wincmd c<CR>', {})
-      elseif type == M.cfg.msg.target then
-        M.msg.prev_msg = '' -- Will no longer be visible.
-      end
 
       -- Fire a FileType autocommand with window context to let the user reconfigure local options.
       api.nvim_win_call(M.wins[type], function()
@@ -94,6 +83,18 @@ function M.check_targets()
           api.nvim_set_option_value('winhighlight', hl, { scope = 'local' })
         end
       end)
+
+      api.nvim_buf_set_name(M.bufs[type], ('[%s]'):format(name[type]))
+      api.nvim_set_option_value('swapfile', false, { buf = M.bufs[type] })
+      api.nvim_set_option_value('modifiable', true, { buf = M.bufs[type] })
+      api.nvim_set_option_value('bufhidden', 'hide', { buf = M.bufs[type] })
+      api.nvim_set_option_value('buftype', 'nofile', { buf = M.bufs[type] })
+      if type == 'pager' then
+        -- Close pager with `q`, same as `checkhealth`
+        api.nvim_buf_set_keymap(M.bufs.pager, 'n', 'q', '<Cmd>wincmd c<CR>', {})
+      elseif type == M.cfg.msg.target then
+        M.msg.prev_msg = '' -- Will no longer be visible.
+      end
     end
   end
   tab = curtab
