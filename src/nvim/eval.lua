@@ -1337,7 +1337,7 @@ M.funcs = {
     signature = 'col({expr} [, {winid}])',
   },
   complete = {
-    args = 2,
+    args = 3,
     base = 2,
     desc = [=[
       Set the matches for Insert mode completion.

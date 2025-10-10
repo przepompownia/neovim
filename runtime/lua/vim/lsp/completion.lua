@@ -502,6 +502,7 @@ local function trigger(bufnr, clients, ctx)
       return
     end
 
+    local keep = vim.fn.complete_info({ 'mode' }).mode == 'keyword'
     local matches = {}
     local server_start_boundary --- @type integer?
     for client_id, response in pairs(responses) do
@@ -535,7 +536,7 @@ local function trigger(bufnr, clients, ctx)
     end
     local start_col = (server_start_boundary or word_boundary) + 1
     Context.cursor = { cursor_row, start_col }
-    vim.fn.complete(start_col, matches)
+    vim.fn.complete(start_col, matches, keep)
   end)
 
   table.insert(Context.pending_requests, cancel_request)

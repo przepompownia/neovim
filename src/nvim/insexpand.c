@@ -3367,7 +3367,7 @@ static void restore_orig_extmarks(void)
 ///
 /// @param startcol  where the matched text starts (1 is first column).
 /// @param list      the list of matches.
-static void set_completion(colnr_T startcol, list_T *list)
+static void set_completion(colnr_T startcol, list_T *list, int keep)
 {
   int flags = CP_ORIGINAL_TEXT;
   unsigned cur_cot_flags = get_cot_flags();
@@ -3380,7 +3380,9 @@ static void set_completion(colnr_T startcol, list_T *list)
     ins_compl_prep(' ');
   }
   ins_compl_clear();
-  ins_compl_free();
+  if (!keep) {
+    ins_compl_free();
+  }
   compl_get_longest = compl_longest;
 
   compl_direction = FORWARD;
@@ -3399,7 +3401,7 @@ static void set_completion(colnr_T startcol, list_T *list)
   }
   if (ins_compl_add(compl_orig_text.data, (int)compl_orig_text.size,
                     NULL, NULL, false, NULL, 0,
-                    flags | CP_FAST, false, NULL, FUZZY_SCORE_NONE) != OK) {
+                    flags | CP_FAST, keep, NULL, FUZZY_SCORE_NONE) != OK) {
     return;
   }
 
@@ -3453,7 +3455,7 @@ void f_complete(typval_T *argvars, typval_T *rettv, EvalFuncData fptr)
   } else {
     const colnr_T startcol = (colnr_T)tv_get_number_chk(&argvars[0], NULL);
     if (startcol > 0) {
-      set_completion(startcol - 1, argvars[1].vval.v_list);
+      set_completion(startcol - 1, argvars[1].vval.v_list, (int)tv_get_number_chk(&argvars[2], NULL));
     }
   }
 }

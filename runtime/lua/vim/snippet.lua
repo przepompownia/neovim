@@ -331,7 +331,7 @@ local function display_choices(tabstop)
   end
 
   vim.defer_fn(function()
-    vim.fn.complete(start_col, matches)
+    vim.fn.complete(start_col, matches, false)
   end, 100)
 end
 
@@ -350,7 +350,7 @@ local function select_tabstop(tabstop)
 
   if vim.fn.pumvisible() ~= 0 then
     -- Close the choice completion menu if open.
-    vim.fn.complete(vim.fn.col('.'), {})
+    vim.fn.complete(vim.fn.col('.'), {}, false)
   end
 
   -- Move the cursor to the start of the tabstop.
