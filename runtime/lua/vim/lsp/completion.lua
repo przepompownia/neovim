@@ -503,6 +503,7 @@ local function trigger(bufnr, clients, ctx)
     end
 
     local keep = vim.fn.complete_info({ 'mode' }).mode == 'keyword'
+    -- local matches --[[@type table]] = vim.fn.complete_info({ 'items' })['items']
     local matches = {}
     local server_start_boundary --- @type integer?
     for client_id, response in pairs(responses) do
