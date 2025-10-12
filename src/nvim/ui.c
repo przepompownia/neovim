@@ -547,7 +547,7 @@ void ui_flush(void)
         ui_call_busy_start();
         was_busy = true;
       }
-    } else if (win_float_is_behind(curwin) && !cursor_was_behind) {
+    } else if (!cursor_was_behind && win_float_is_behind(curwin)) {
       ui_mode_idx = SHAPE_IDX_R;
       pending_mode_update = true;
       cursor_was_behind = true;
