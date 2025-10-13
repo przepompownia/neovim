@@ -11,4 +11,4 @@
 EXTERN const char *const float_anchor_str[] INIT( = { "NW", "NE", "SW", "SE" });
 
 #include "winfloat.h.generated.h"
-bool win_float_is_behind(win_T *wp);
+bool win_is_behind(win_T *wp);
