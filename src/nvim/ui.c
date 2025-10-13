@@ -537,28 +537,22 @@ void ui_flush(void)
   }
 
   static bool was_busy = false;
-  static bool cursor_was_behind = false;
 
   cmdline_ui_flush();
 
-  if (!(State & MODE_CMDLINE) && curwin->w_floating) {
-    if (curwin->w_config.hide) {
+  if (!(State & MODE_CMDLINE)) {
+    if (curwin->w_floating && curwin->w_config.hide) {
       if (!was_busy) {
         ui_call_busy_start();
         was_busy = true;
       }
-    } else if (!cursor_was_behind && win_float_is_behind(curwin)) {
-      ui_mode_idx = SHAPE_IDX_R;
+    } else if (!curwin->w_config.hide) {
       pending_mode_update = true;
-      cursor_was_behind = true;
+      ui_mode_idx = win_is_behind(curwin) ? SHAPE_IDX_R : cursor_get_mode_idx();
+    } else if (was_busy) {
+      ui_call_busy_stop();
+      was_busy = false;
     }
-  } else if (was_busy) {
-    ui_call_busy_stop();
-    was_busy = false;
-  } else if (cursor_was_behind) {
-    ui_mode_idx = cursor_get_mode_idx();
-    pending_mode_update = true;
-    cursor_was_behind = false;
   }
 
   win_ui_flush(false);
