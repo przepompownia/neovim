@@ -436,6 +436,6 @@ describe('messages2', function()
       {1:                                                     }|
                                                            |
     ]])
-    t.eq(n.eval('g:optionset'), 4) -- still fires for 'filetype'
+    t.eq(4, n.eval('g:optionset')) -- still fires for 'filetype'
   end)
 end)
