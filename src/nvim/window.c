@@ -4033,10 +4033,12 @@ static int frame_minwidth(frame_T *topfrp, win_T *next_curwin)
 /// Buffers in the other windows become hidden if 'hidden' is set, or '!' is
 /// used and the buffer was modified.
 ///
-/// Used by ":bdel" and ":only".
+/// Used by ":tabclose" and ":only".
 ///
-/// @param forceit  always hide all other windows
-void close_others(int message, int forceit)
+/// @param message       if true, display error messages
+/// @param forceit       always hide all other windows
+/// @param ignore_pinned if true, also close pinned floating windows (for :tabclose)
+void close_others(int message, int forceit, bool ignore_pinned)
 {
   if (curwin->w_floating) {
     if (message && !autocmd_busy) {
@@ -4057,7 +4059,7 @@ void close_others(int message, int forceit)
   for (win_T *wp = firstwin; win_valid(wp); wp = nextwp) {
     nextwp = wp->w_next;
     // don't close current window or pinned floating windows
-    if (wp == curwin || (wp->w_floating && wp->w_config.pinned)) {
+    if (wp == curwin || (wp->w_floating && wp->w_config.pinned && !ignore_pinned)) {
       continue;
     }
 

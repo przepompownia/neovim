@@ -11006,7 +11006,7 @@ describe('float window', function()
       })
       feed(':fclose<CR>')
       eq(false, api.nvim_win_is_valid(win))
-      local win1 = api.nvim_open_win(api.nvim_create_buf(false, true), false, {
+      local config = {
         relative = 'editor',
         width = 10,
         height = 3,
@@ -11014,7 +11014,8 @@ describe('float window', function()
         col = 1,
         zindex = 200,
         hide = true,
-      })
+      }
+      local win1 = api.nvim_open_win(api.nvim_create_buf(false, true), false, config)
       local win2 = api.nvim_open_win(api.nvim_create_buf(false, true), false, {
         relative = 'editor',
         width = 20,
@@ -11038,6 +11039,13 @@ describe('float window', function()
       command(':only')
       eq(true, api.nvim_win_is_valid(pinned_win))
       eq("'pinned' cannot be changed after window creation", pcall_err(api.nvim_win_set_config, pinned_win, { pinned = false }))
+      api.nvim_win_close(pinned_win, true)
+      local tab1 = api.nvim_get_current_tabpage()
+      command('tabnew')
+      config.pinned = true
+      api.nvim_open_win(api.nvim_create_buf(false, true), false, config)
+      command('tabclose')
+      eq(tab1, api.nvim_get_current_tabpage())
     end)
 
     it('correctly placed in or above message area', function()
