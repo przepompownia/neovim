@@ -302,8 +302,8 @@ describe('prompt buffer', function()
       {5:-- INSERT --}             |
     ]])
 
-    -- ensure cursor gets adjusted to end of user-text to prompt when insert mode
-    -- is entered from readonly region of prompt buffer
+    -- ensure cursor gets placed on first line of user input.
+    -- when insert mode is entered from read-only region of prompt buffer.
     local prompt_pos = api.nvim_buf_get_mark(0, ':')
     feed('<esc>')
     -- works before prompt
