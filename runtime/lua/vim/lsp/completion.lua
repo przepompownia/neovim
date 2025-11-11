@@ -672,7 +672,7 @@ local function on_completechanged(group, bufnr)
       if
         #lsp.get_clients({
           id = vim.tbl_get(completed_item, 'user_data', 'nvim', 'lsp', 'client_id'),
-          method = ms.completionItem_resolve,
+          method = 'completionItem/resolve',
           bufnr = args.buf,
         }) == 0
       then
