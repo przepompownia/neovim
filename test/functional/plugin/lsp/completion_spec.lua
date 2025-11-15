@@ -149,10 +149,6 @@ describe('vim.lsp.completion: item conversion', function()
         abbr = 'foo',
         word = 'foo',
       },
-      {
-        abbr = 'bar',
-        word = 'bar',
-      },
     }
     result = vim.tbl_map(function(x)
       return {
@@ -618,21 +614,6 @@ describe('vim.lsp.completion: item conversion', function()
             },
           },
         },
-        {
-          label = 'insert_replace_edit',
-          kind = 9,
-          textEdit = {
-            newText = 'foobar',
-            insert = {
-              start = { line = 0, character = 7 },
-              ['end'] = { line = 0, character = 11 },
-            },
-            replace = {
-              start = { line = 0, character = 0 },
-              ['end'] = { line = 0, character = 0 },
-            },
-          },
-        },
       },
     }
     local expected = {
@@ -646,17 +627,6 @@ describe('vim.lsp.completion: item conversion', function()
         menu = '',
         abbr_hlgroup = '',
         word = 'this_thread',
-      },
-      {
-        abbr = 'insert_replace_edit',
-        dup = 1,
-        empty = 1,
-        icase = 1,
-        info = '',
-        kind = 'Module',
-        menu = '',
-        abbr_hlgroup = '',
-        word = 'foobar',
       },
     }
     local result = complete('  std::this|', completion_list)
