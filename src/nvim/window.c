@@ -4040,6 +4040,8 @@ static int frame_minwidth(frame_T *topfrp, win_T *next_curwin)
 /// @param ignore_pinned if true, also close pinned floating windows (for :tabclose)
 void close_others(int message, int forceit, bool ignore_pinned)
 {
+  win_T *const old_curwin = curwin;
+
   if (curwin->w_floating) {
     if (message && !autocmd_busy) {
       emsg(e_floatonly);
@@ -4058,8 +4060,14 @@ void close_others(int message, int forceit, bool ignore_pinned)
   win_T *nextwp;
   for (win_T *wp = firstwin; win_valid(wp); wp = nextwp) {
     nextwp = wp->w_next;
-    // don't close current window or pinned floating windows
-    if (wp == curwin || (wp->w_floating && wp->w_config.pinned && !ignore_pinned)) {
+
+    // autocommands messed this one up
+    if (old_curwin != curwin && win_valid(old_curwin)) {
+      curwin = old_curwin;
+      curbuf = curwin->w_buffer;
+    }
+
+    if (wp == curwin) {                 // don't close current window
       continue;
     }
 
