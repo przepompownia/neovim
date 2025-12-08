@@ -2062,10 +2062,10 @@ describe('float window', function()
       eq('center', footer_pos)
     end)
 
-    it('center aligned title longer than window width #25746', function()
+    it('truncates title longer than window width #25746 #23602', function()
       local buf = api.nvim_create_buf(false, false)
       api.nvim_buf_set_lines(buf, 0, -1, true, { ' halloj! ', ' BORDAA  ' })
-      local win = api.nvim_open_win(buf, false, {
+      local config = {
         relative = 'editor',
         width = 9,
         height = 2,
@@ -2074,8 +2074,8 @@ describe('float window', function()
         border = 'double',
         title = 'abcdefghijklmnopqrstuvwxyz',
         title_pos = 'center',
-      })
-
+      }
+      local win = api.nvim_open_win(buf, false, config)
       if multigrid then
         screen:expect {
           grid = [[
@@ -2088,7 +2088,7 @@ describe('float window', function()
         ## grid 3
                                                   |
         ## grid 4
-          {5:╔}{11:abcdefghi}{5:╗}|
+          {5:╔}{11:<stuvwxyz}{5:╗}|
           {5:║}{1: halloj! }{5:║}|
           {5:║}{1: BORDAA  }{5:║}|
           {5:╚═════════╝}|
@@ -2104,7 +2104,7 @@ describe('float window', function()
           grid = [[
           ^                                        |
           {0:~                                       }|
-          {0:~    }{5:╔}{11:abcdefghi}{5:╗}{0:                        }|
+          {0:~    }{5:╔}{11:<stuvwxyz}{5:╗}{0:                        }|
           {0:~    }{5:║}{1: halloj! }{5:║}{0:                        }|
           {0:~    }{5:║}{1: BORDAA  }{5:║}{0:                        }|
           {0:~    }{5:╚═════════╝}{0:                        }|
@@ -2112,7 +2112,9 @@ describe('float window', function()
         ]],
         }
       end
-
+      config.title = { { 'abcd' }, { 'stuvw' }, { 'xyz' } }
+      api.nvim_win_set_config(win, config)
+      screen:expect_unchanged()
       api.nvim_win_close(win, false)
       assert_alive()
     end)
