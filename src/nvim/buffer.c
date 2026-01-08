@@ -1323,17 +1323,10 @@ static int do_buffer_ext(int action, int start, int dir, int count, int flags)
     return FAIL;
   }
 
-  if (action == DOBUF_GOTO && buf != curbuf) {
-    if (!check_can_set_curbuf_forceit((flags & DOBUF_FORCEIT) != 0)) {
-      // disallow navigating to another buffer when 'winfixbuf' is applied
-      return FAIL;
-    }
-    if (buf->b_locked_split) {
-      // disallow navigating to a closing buffer, which like splitting,
-      // can result in more windows displaying it
-      emsg(_(e_cannot_switch_to_a_closing_buffer));
-      return FAIL;
-    }
+  if (action == DOBUF_GOTO && buf != curbuf
+      && !check_can_set_curbuf_forceit((flags & DOBUF_FORCEIT) != 0)) {
+    // disallow navigating to another buffer when 'winfixbuf' is applied
+    return FAIL;
   }
 
   if ((action == DOBUF_GOTO || action == DOBUF_SPLIT) && (buf->b_flags & BF_DUMMY)) {
@@ -1441,10 +1434,11 @@ static int do_buffer_ext(int action, int start, int dir, int count, int flags)
     // Then prefer the buffer we most recently visited.
     // Else try to find one that is loaded, after the current buffer,
     // then before the current buffer.
-    // Finally use any buffer.
+    // Finally use any buffer.  Skip buffers that are closing throughout.
     buf = NULL;  // Selected buffer.
     bp = NULL;   // Used when no loaded buffer found.
-    if (au_new_curbuf.br_buf != NULL && bufref_valid(&au_new_curbuf)) {
+    if (au_new_curbuf.br_buf != NULL && bufref_valid(&au_new_curbuf)
+        && !au_new_curbuf.br_buf->b_locked_split) {
       buf = au_new_curbuf.br_buf;
     } else if (curwin->w_jumplistlen > 0) {
       if (jop_flags & kOptJopFlagClean) {
@@ -1476,8 +1470,9 @@ static int do_buffer_ext(int action, int start, int dir, int count, int flags)
 
           if (buf != NULL) {
             // Skip current and unlisted bufs.  Also skip a quickfix
-            // buffer, it might be deleted soon.
-            if (buf == curbuf || !buf->b_p_bl || bt_quickfix(buf)) {
+            // or closing buffer, it might be deleted soon.
+            if (buf == curbuf || !buf->b_p_bl || bt_quickfix(buf)
+                || buf->b_locked_split) {
               buf = NULL;
             } else if (buf->b_ml.ml_mfp == NULL) {
               // skip unloaded buf, but may keep it for later
@@ -1521,7 +1516,8 @@ static int do_buffer_ext(int action, int start, int dir, int count, int flags)
           continue;
         }
         // in non-help buffer, try to skip help buffers, and vv
-        if (buf->b_help == curbuf->b_help && buf->b_p_bl && !bt_quickfix(buf)) {
+        if (buf->b_help == curbuf->b_help && buf->b_p_bl
+            && !bt_quickfix(buf) && !buf->b_locked_split) {
           if (buf->b_ml.ml_mfp != NULL) {           // found loaded buffer
             break;
           }
@@ -1537,7 +1533,7 @@ static int do_buffer_ext(int action, int start, int dir, int count, int flags)
     }
     if (buf == NULL) {          // No loaded buffer, find listed one
       FOR_ALL_BUFFERS(buf2) {
-        if (buf2->b_p_bl && buf2 != curbuf && !bt_quickfix(buf2)) {
+        if (buf2->b_p_bl && buf2 != curbuf && !bt_quickfix(buf2) && !buf2->b_locked_split) {
           buf = buf2;
           break;
         }
@@ -1545,7 +1541,7 @@ static int do_buffer_ext(int action, int start, int dir, int count, int flags)
     }
     if (buf == NULL) {          // Still no buffer, just take one
       buf = curbuf->b_next != NULL ? curbuf->b_next : curbuf->b_prev;
-      if (bt_quickfix(buf)) {
+      if (bt_quickfix(buf) || (buf != curbuf && buf->b_locked_split)) {
         buf = NULL;
       }
     }
@@ -1558,15 +1554,17 @@ static int do_buffer_ext(int action, int start, int dir, int count, int flags)
   }
 
   // make "buf" the current buffer
-  if (action == DOBUF_SPLIT) {      // split window first
-    // If 'switchbuf' is set jump to the window containing "buf".
-    if (swbuf_goto_win_with_buf(buf) != NULL) {
-      return OK;
-    }
-
-    if (win_split(0, 0) == FAIL) {
-      return FAIL;
-    }
+  // If 'switchbuf' is set jump to the window containing "buf".
+  if (action == DOBUF_SPLIT && swbuf_goto_win_with_buf(buf) != NULL) {
+    return OK;
+  }
+  // Whether splitting or not, don't open a closing buffer in more windows.
+  if (buf != curbuf && buf->b_locked_split) {
+    emsg(_(e_cannot_switch_to_a_closing_buffer));
+    return FAIL;
+  }
+  if (action == DOBUF_SPLIT && win_split(0, 0) == FAIL) {  // split window first
+    return FAIL;
   }
 
   // go to current buffer - nothing to do
