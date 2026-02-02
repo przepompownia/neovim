@@ -62,7 +62,7 @@ describe('prompt buffer', function()
     screen:expect([[
       cmd: ^                    |
       {1:~                        }|*3
-      {3:[Prompt] [+]             }|
+      {3:[Prompt]                 }|
       other buffer             |
       {1:~                        }|*3
       {5:-- INSERT --}             |
@@ -149,7 +149,7 @@ describe('prompt buffer', function()
     screen:expect([[
       cmd:                     |
       {1:~                        }|*3
-      {2:[Prompt] [+]             }|
+      {2:[Prompt]                 }|
       ^other buffer             |
       {1:~                        }|*3
                                |
@@ -158,7 +158,7 @@ describe('prompt buffer', function()
     screen:expect([[
       cmd: ^                    |
       {1:~                        }|*3
-      {3:[Prompt] [+]             }|
+      {3:[Prompt]                 }|
       other buffer             |
       {1:~                        }|*3
       {5:-- INSERT --}             |
@@ -167,7 +167,7 @@ describe('prompt buffer', function()
     screen:expect([[
       cmd:^                     |
       {1:~                        }|*3
-      {3:[Prompt] [+]             }|
+      {3:[Prompt]                 }|
       other buffer             |
       {1:~                        }|*3
                                |
@@ -290,8 +290,8 @@ describe('prompt buffer', function()
     source([[
       bwipeout!
       set formatoptions+=r
-      set buftype=prompt
       call prompt_setprompt(bufnr(), "% ")
+      set buftype=prompt
     ]])
     feed('iline1<s-cr>line2')
     screen:expect([[
