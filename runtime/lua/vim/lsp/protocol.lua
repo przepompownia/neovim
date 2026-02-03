@@ -605,6 +605,9 @@ function protocol.make_client_capabilities()
         dynamicRegistration = sysname == 'Darwin' or sysname == 'Windows_NT',
         relativePatternSupport = true,
       },
+      codeLens = {
+        refreshSupport = true,
+      },
       inlayHint = {
         refreshSupport = true,
       },
@@ -1342,6 +1345,7 @@ protocol._request_name_allows_registration = {
   ['textDocument/selectionRange'] = true,
   ['textDocument/semanticTokens/full'] = true,
   ['textDocument/semanticTokens/full/delta'] = true,
+  ['textDocument/semanticTokens/range'] = true,
   ['textDocument/signatureHelp'] = true,
   ['textDocument/typeDefinition'] = true,
   ['textDocument/willSave'] = true,
