@@ -1600,16 +1600,19 @@ void buf_update_prompt_text(buf_T *buf, const char *new_prompt)
   }
 
   linenr_T prompt_lno = buf->b_prompt_start.mark.lnum;
-  char *old_prompt = buf->b_prompt_text;
-  int old_prompt_len = old_prompt != NULL ? strlen(old_prompt) : 0;
-  int new_prompt_len = new_prompt != NULL ? strlen(new_prompt) : 0;
+  char *old_prompt = buf->b_prompt_text != NULL ? buf->b_prompt_text : "";
   char *old_line = ml_get_buf(buf, prompt_lno);
-  int old_line_len = old_line != NULL ? strlen(old_line) : 0;
+  new_prompt = new_prompt != NULL ? new_prompt : "";
+  old_line = old_line != NULL ? old_line : "";
+
+  int old_prompt_len = (int)strlen(old_prompt);
+  int new_prompt_len = (int)strlen(new_prompt);
+  int old_line_len = (int)strlen(old_line);
 
   if (buf->b_prompt_start.mark.col < old_prompt_len
       || old_line_len < curbuf->b_prompt_start.mark.col
       || strncmp(old_line + curbuf->b_prompt_start.mark.col - old_prompt_len, old_prompt,
-                 old_prompt_len) != 0) {
+                 (size_t)old_prompt_len) != 0) {
     // in case if for some odd reason the old prompt is missing
     // replace the prompt line
     ml_replace_buf(buf, prompt_lno, (char *)new_prompt, true, false);
@@ -1620,7 +1623,7 @@ void buf_update_prompt_text(buf_T *buf, const char *new_prompt)
     char *new_line = concat_str(new_prompt, old_line + buf->b_prompt_start.mark.col);
     ml_replace_buf(buf, prompt_lno, new_line, false, false);
     if (curwin->w_buffer == buf) {
-      coladvance(curwin, (colnr_T)(curwin->w_cursor.col + new_prompt_len - old_prompt_len));
+      coladvance(curwin, (colnr_T)((int)curwin->w_cursor.col + new_prompt_len - old_prompt_len));
     }
   }
 
