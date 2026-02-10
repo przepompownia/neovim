@@ -182,7 +182,7 @@ typedef struct {
   Boolean altfont;
   Boolean nocombine;
   Boolean default_ DictKey(default);
-  Union(Integer, String) cterm;
+  DictAs(highlight_cterm) cterm;
   Union(Integer, String) foreground;
   Union(Integer, String) fg;
   Union(Integer, String) background;
