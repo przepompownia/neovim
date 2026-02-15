@@ -82,11 +82,10 @@ describe('messages2', function()
     feed('Q')
     screen:expect([[
       ^                                                     |
-      {1:~                                                    }|*8
+      {1:~                                                    }|*9
       {3:                                                     }|
       foo                                                  |
       bar                                                  |
-                                                           |
         1 %a   "[No Name]"                    line 1       |
     ]])
     feed('<C-L>')
@@ -439,6 +438,37 @@ describe('messages2', function()
       {1:~                                                    }|*11
       {3:                                                     }|
       {101:fo^o}{100:                                                  }|
+    ]])
+  end)
+
+  it(':echon appends message', function()
+    command([[echo 1 | echon 2]])
+    screen:expect([[
+      ^                                                     |
+      {1:~                                                    }|*12
+      12                                                   |
+    ]])
+    feed('g<lt>')
+    screen:expect([[
+                                                           |
+      {1:~                                                    }|*10
+      {3:                                                     }|
+      ^12                                                   |
+                                                           |
+    ]])
+    feed([[q:echo 1 | echon 2 | echon 2 | echon 3<CR>]])
+    screen:expect([[
+      ^                                                     |
+      {1:~                                                    }|*12
+      1223                                                 |
+    ]])
+    feed('g<lt>')
+    screen:expect([[
+                                                           |
+      {1:~                                                    }|*10
+      {3:                                                     }|
+      ^1223                                                 |
+                                                           |
     ]])
   end)
 
