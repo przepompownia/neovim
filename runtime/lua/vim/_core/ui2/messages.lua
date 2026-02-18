@@ -300,7 +300,13 @@ function M.show_msg(tgt, content, replace_last, append, id)
       else
         local erow = mark[3] and mark[3].end_row or row
         local ecol = mark[3] and mark[3].end_col or curline and math.min(end_col, #curline) or -1
-        api.nvim_buf_set_text(buf, row, col, erow, ecol, { repl })
+        local ok, err = pcall(api.nvim_buf_set_text, buf, row, col, erow, ecol, { repl })
+        if not ok then
+          local f = assert(io.open('/tmp/v.log', 'a+'))
+          f:write(('%d: %s\n'):format(vim.uv.hrtime() / 1000000000, vim.inspect(content))); f:close()
+          vim.notify(err or 'no error!', vim.log.levels.ERROR)
+          vim.notify('See /tmp/v.log!', vim.log.levels.ERROR)
+        end
       end
       curline = api.nvim_buf_get_lines(buf, row, row + 1, false)[1]
       mark[3] = nil
