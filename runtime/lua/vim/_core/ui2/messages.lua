@@ -414,6 +414,7 @@ function M.msg_show(kind, content, replace_last, _, append, id)
     ui.cmd.dialog = true -- Ensure dialog is closed when cmdline is hidden.
     M.show_msg('dialog', content, replace_last, append, id)
     M.set_pos('dialog')
+  elseif kind == 'search_cmd' then return
   else
     -- Set the entered search command in the cmdline (if available).
     local tgt = kind == 'search_cmd' and 'cmd' or ui.cfg.msg.target
