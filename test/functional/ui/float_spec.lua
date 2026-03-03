@@ -1436,6 +1436,7 @@ describe('float window', function()
       local expected = {
         anchor = 'NW',
         border = 'none',
+        style = '',
         col = 5,
         external = false,
         focusable = true,
@@ -1472,10 +1473,10 @@ describe('float window', function()
         mouse = true,
         hide = false,
         relative = '',
+        style = '',
         split = 'left',
         width = 40,
         height = 6,
-        pinned = false,
       }, api.nvim_win_get_config(0))
 
       if multigrid then
@@ -1487,9 +1488,9 @@ describe('float window', function()
           width = 10,
           height = 1,
           relative = '',
+          style = '',
           hide = false,
           border = 'none',
-          pinned = false,
         }, api.nvim_win_get_config(win))
       end
     end)
@@ -4561,6 +4562,7 @@ describe('float window', function()
         bufpos = { 1, 32 },
         anchor = 'NW',
         border = 'none',
+        style = '',
         hide = false,
         external = false,
         col = 0,
