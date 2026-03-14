@@ -5578,6 +5578,7 @@ void win_free(win_T *wp, tabpage_T *tp)
       // Discard saved options if the style is minimal.
       if (wp->w_config.style == kWinStyleMinimal && wip_wp->wi_optset) {
         clear_winopt(&wip_wp->wi_opt);
+        deleteFoldRecurse(buf, &wip_wp->wi_folds);
         wip_wp->wi_optset = false;
       }
       // If there already is an entry with "wi_win" set to NULL, only
