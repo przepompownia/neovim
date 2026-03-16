@@ -1022,12 +1022,7 @@ local function trigger(bufnr, clients, ctx)
         on_completechanged(group, bufnr)
       end
     end
-    if
-      server_start_boundary ~= nil
-      and server_start_boundary < word_boundary
-      and vim.o.autocomplete
-      and vim.list_contains(vim.opt.complete:get(), 'o')
-    then
+    if vim.o.autocomplete and vim.list_contains(vim.opt.complete:get(), 'o') then
       vim.fn.complete_add(matches, start_col)
     else
       vim.fn.complete(start_col, matches)
