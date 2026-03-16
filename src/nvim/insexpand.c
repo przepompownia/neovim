@@ -3482,7 +3482,61 @@ void f_complete(typval_T *argvars, typval_T *rettv, EvalFuncData fptr)
 /// "complete_add()" function
 void f_complete_add(typval_T *argvars, typval_T *rettv, EvalFuncData fptr)
 {
-  rettv->vval.v_number = ins_compl_add_tv(&argvars[0], 0, false);
+  if (argvars[1].v_type == VAR_UNKNOWN) {
+    rettv->vval.v_number = ins_compl_add_tv(&argvars[0], 0, false);
+    return;
+  }
+
+  if (!compl_started || (State & MODE_INSERT) == 0
+      || !compl_autocomplete || cpt_sources_array == NULL) {
+    rettv->vval.v_number = 0;
+    return;
+  }
+  if (argvars[0].v_type != VAR_LIST || argvars[1].v_type != VAR_NUMBER) {
+    emsg(_(e_invarg));
+    rettv->vval.v_number = 0;
+    return;
+  }
+
+  int source_idx = -1;
+  for (int i = 0; i < cpt_sources_count; i++) {
+    if (cpt_sources_array[i].cs_flag == 'o') {
+      source_idx = i;
+      break;
+    }
+  }
+  if (source_idx < 0) {
+    rettv->vval.v_number = 0;
+    return;
+  }
+
+  int startcol = (int)tv_get_number(&argvars[1]) - 1;
+  if (startcol < 0) {
+    startcol = 0;
+  }
+  if (startcol > (int)curwin->w_cursor.col) {
+    startcol = (int)curwin->w_cursor.col;
+  }
+
+  cpt_sources_array[source_idx].cs_startcol = startcol;
+  cpt_sources_array[source_idx].cs_refresh_always = true;
+  int save_idx = cpt_sources_index;
+  cpt_sources_index = source_idx;
+
+  ins_compl_make_linear();
+  ins_compl_del_pum();
+  remove_old_matches();
+  ins_compl_add_list(argvars[0].vval.v_list);
+
+  cpt_sources_index = save_idx;
+  compl_matches = ins_compl_make_cyclic();
+  compl_started = true;
+  if (compl_leader.data == NULL && curwin->w_cursor.col >= compl_col) {
+    compl_leader = cbuf_to_string(get_cursor_line_ptr() + compl_col,
+                                  (size_t)(curwin->w_cursor.col - compl_col));
+  }
+  ins_compl_show_pum();
+  rettv->vval.v_number = 1;
 }
 
 /// "complete_check()" function
@@ -6586,7 +6640,10 @@ static void cpt_compl_refresh(void)
     if (cpt_sources_array[cpt_sources_index].cs_refresh_always) {
       Callback *cb = get_callback_if_cpt_func(p, cpt_sources_index);
       if (cb) {
-        remove_old_matches();
+        bool was_async = cpt_sources_array[cpt_sources_index].cs_startcol < 0;
+        if (!was_async) {
+          remove_old_matches();
+        }
         int startcol;
         int ret = get_userdefined_compl_info(curwin->w_cursor.col, cb, &startcol);
         if (ret == FAIL) {
@@ -6600,6 +6657,9 @@ static void cpt_compl_refresh(void)
         }
         cpt_sources_array[cpt_sources_index].cs_startcol = startcol;
         if (ret == OK) {
+          if (was_async) {
+            remove_old_matches();
+          }
           compl_source_start_timer(cpt_sources_index);
           get_cpt_func_completion_matches(cb);
         }
