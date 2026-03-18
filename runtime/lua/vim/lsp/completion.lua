@@ -36,6 +36,7 @@ local M = {}
 local api = vim.api
 local lsp = vim.lsp
 local protocol = lsp.protocol
+local CompletionTriggerKind = protocol.CompletionTriggerKind
 
 local rtt_ms = 50.0
 local ns_to_ms = 0.000001
@@ -1278,12 +1279,17 @@ function M._omnifunc(findstart, base)
   lsp.log.debug('omnifunc.findstart', { findstart = findstart, base = base })
   local bufnr = api.nvim_get_current_buf()
   local clients = lsp.get_clients({ bufnr = bufnr, method = 'textDocument/completion' })
-  local remaining = #clients
-  if remaining == 0 then
+  if #clients == 0 then
     return findstart == 1 and -1 or {}
   end
+  local ctx = {
+    triggerKind = CompletionTriggerKind.Invoked,
+  }
+  if findstart == 1 and Context.isIncomplete then
+    ctx.triggerKind = CompletionTriggerKind.TriggerForIncompleteCompletions
+  end
 
-  trigger(bufnr, clients, { triggerKind = protocol.CompletionTriggerKind.Invoked })
+  trigger(bufnr, clients, ctx)
 
   -- Return -2 to signal that we should continue completion so that we can
   -- async complete.

@@ -333,6 +333,7 @@ static int *compl_fuzzy_scores;
 /// Define the structure for completion source (in 'cpt' option) information
 typedef struct cpt_source_T {
   bool cs_refresh_always;   ///< Whether 'refresh:always' is set for func
+  bool cs_async;            ///< Whether this source is async
   int cs_startcol;          ///< Start column returned by func
   int cs_max_matches;       ///< Max items to display from this source
   uint64_t compl_start_tv;  ///< Timestamp when match collection starts
@@ -3520,6 +3521,7 @@ void f_complete_add(typval_T *argvars, typval_T *rettv, EvalFuncData fptr)
 
   cpt_sources_array[source_idx].cs_startcol = startcol;
   cpt_sources_array[source_idx].cs_refresh_always = true;
+  cpt_sources_array[source_idx].cs_async = true;
   int save_idx = cpt_sources_index;
   cpt_sources_index = source_idx;
 
@@ -6640,7 +6642,7 @@ static void cpt_compl_refresh(void)
     if (cpt_sources_array[cpt_sources_index].cs_refresh_always) {
       Callback *cb = get_callback_if_cpt_func(p, cpt_sources_index);
       if (cb) {
-        bool was_async = cpt_sources_array[cpt_sources_index].cs_startcol < 0;
+        bool was_async = cpt_sources_array[cpt_sources_index].cs_async;
         if (!was_async) {
           remove_old_matches();
         }
@@ -6648,6 +6650,7 @@ static void cpt_compl_refresh(void)
         int ret = get_userdefined_compl_info(curwin->w_cursor.col, cb, &startcol);
         if (ret == FAIL) {
           if (startcol == -3) {
+            cpt_sources_array[cpt_sources_index].cs_async = false;
             cpt_sources_array[cpt_sources_index].cs_refresh_always = false;
           } else {
             startcol = -2;
@@ -6659,6 +6662,7 @@ static void cpt_compl_refresh(void)
         if (ret == OK) {
           if (was_async) {
             remove_old_matches();
+            cpt_sources_array[cpt_sources_index].cs_async = false;
           }
           compl_source_start_timer(cpt_sources_index);
           get_cpt_func_completion_matches(cb);
