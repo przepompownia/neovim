@@ -366,7 +366,7 @@ end
 --- @param prefix string prefix to filter the completion items
 --- @param client_id integer? Client ID
 --- @param server_start_boundary integer? server start boundary
---- @param line string? current line content
+--- @param line? string current line content
 --- @param lnum integer? 0-indexed line number
 --- @param encoding string? encoding
 --- @return table[]
@@ -407,7 +407,7 @@ function M._lsp_to_complete_items(
     local item_start_byte --- @type integer?
     local item_end_byte --- @type integer?
     local is_transform = false
-    if server_start_boundary and line and encoding and item.textEdit then
+    if server_start_boundary and line and lnum and encoding and item.textEdit then
       local sc, ec --- @type integer?, integer?
       if item.textEdit.range and item.textEdit.range.start.line == lnum then
         sc = item.textEdit.range.start.character
@@ -424,7 +424,7 @@ function M._lsp_to_complete_items(
       end
       -- Detect transformation edits (e.g. dot-to-arrow).
       if item_start_byte and item_start_byte == server_start_boundary and item.textEdit.newText then
-        local buf_char = line:sub(item_start_byte + 1, item_start_byte + 1)
+        local buf_char = vim.fn.strcharpart(line:sub(item_start_byte + 1), 0, 1)
         if
           buf_char ~= ''
           and not buf_char:find('%w')
@@ -441,7 +441,8 @@ function M._lsp_to_complete_items(
       and item_end_byte > server_start_boundary
       and (is_transform or (item_start_byte and item_start_byte > server_start_boundary))
     then
-      effective_prefix = prefix:sub(item_end_byte - server_start_boundary + 1)
+      local sub_start = item_end_byte - server_start_boundary + 1
+      effective_prefix = sub_start <= #prefix and prefix:sub(sub_start) or ''
     end
     local match, score = matches(item, effective_prefix)
     if match then
@@ -877,7 +878,7 @@ local function on_complete_done()
     end
   end
 
-  if needs_text_edit then
+  if needs_text_edit and Context.cursor then
     api.nvim_buf_set_text(
       bufnr,
       Context.cursor[1] - 1,
