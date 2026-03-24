@@ -780,7 +780,7 @@ end)
 
 --- @param name string
 --- @param completion_result vim.lsp.CompletionResult
---- @param opts? {trigger_chars?: string[], resolve_result?: lsp.CompletionItem|lsp.CompletionItem[], delay?: integer, cmp?: string}
+--- @param opts? {trigger_chars?: string[], resolve_result?: lsp.CompletionItem|lsp.CompletionItem[], delay?: integer, cmp?: string, forIncomplete?: table}
 --- @return integer
 local function create_server(name, completion_result, opts)
   opts = opts or {}
