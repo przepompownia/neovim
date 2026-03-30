@@ -121,7 +121,8 @@ The following new features were added.
 
 API
 
-• todo
+• |vim.lsp.buf.declaration()|, |vim.lsp.buf.definition()|, |vim.lsp.buf.definition()|,
+  and |vim.lsp.buf.implementation()| now follows 'switchbuf'.
 
 BUILD
 
@@ -208,7 +209,8 @@ REMOVED FEATURES                                                 *news-removed*
 
 These deprecated features were removed.
 
-• todo
+• |vim.lsp.buf.declaration()|, |vim.lsp.buf.definition()|, |vim.lsp.buf.definition()|,
+  and |vim.lsp.buf.implementation()| no longer accept the `reuse_win` option.
 
 ==============================================================================
 DEPRECATIONS                                                *news-deprecations*
