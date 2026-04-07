@@ -190,10 +190,10 @@ vim.go.autoread = vim.o.autoread
 vim.go.ar = vim.go.autoread
 
 --- Write the contents of the file, if it has been modified, on each
---- `:next`, `:rewind`, `:last`, `:first`, `:previous`, `:stop`,
---- `:suspend`, `:tag`, `:!`, `:make`, CTRL-] and CTRL-^ command; and when
---- a `:buffer`, CTRL-O, CTRL-I, '{A-Z0-9}, or `{A-Z0-9} command takes one
---- to another file.
+--- `:next`, `:rewind`, `:last`, `:first`, `:previous`, `:tag`, `:stop`,
+--- `:suspend`, `:!`, `:make`, `:terminal`, CTRL-] or CTRL-^ command; and
+--- when a `:buffer`, CTRL-O, CTRL-I, '{A-Z0-9}, or `{A-Z0-9} command
+--- switches to another file.
 --- A buffer is not written if it becomes hidden, e.g. when 'bufhidden' is
 --- set to "hide" and `:next` is used.
 --- Note that for some commands the 'autowrite' option is not used, see
@@ -210,8 +210,8 @@ vim.o.aw = vim.o.autowrite
 vim.go.autowrite = vim.o.autowrite
 vim.go.aw = vim.go.autowrite
 
---- Like 'autowrite', but also used for commands ":edit", ":enew",
---- ":quit", ":qall", ":exit", ":xit", ":recover" and closing the Vim
+--- Like 'autowrite', but also used for commands `:edit`, `:enew`,
+--- `:quit`, `:qall`, `:exit`, `:xit`, `:recover` and closing the Vim
 --- window.
 --- Setting this option also implies that Vim behaves like 'autowrite' has
 --- been set.
@@ -3572,7 +3572,8 @@ vim.bo.inex = vim.bo.includeexpr
 --- command line has no uppercase characters, the added character is
 --- converted to lowercase.
 --- CTRL-R CTRL-W can be used to add the word at the end of the current
---- match, excluding the characters that were already typed.
+--- match, excluding the characters that were already typed (starting from
+--- the beginning of the word).
 ---
 --- @type boolean
 vim.o.incsearch = true
@@ -6750,11 +6751,15 @@ vim.wo.stc = vim.wo.statuscolumn
 
 --- Sets the `status-line`.
 ---
---- The option consists of printf style '%' items interspersed with
---- normal text.  Each status line item is of the form:
+--- Contains printf-style "%" items interspersed with normal text, where
+--- each item has the form:
+--- ```
 ---   %-0{minwid}.{maxwid}{item}
---- All fields except the {item} are optional.  A single percent sign can
---- be given as "%%".
+--- ```
+---
+--- All fields except {item} are optional.  Use "%%" to show a literal "%"
+--- char.  Setting this option to empty (`:set statusline=`) sets its
+--- value to the default.
 ---
 --- 						*stl-%!*
 --- When the option starts with "%!" then it is used as an expression,
