@@ -20,30 +20,28 @@ cycle (Nvim HEAD, the "master" branch).
 
 EVENTS
 
-• Renamed "nvim.find_exrc" |default-autocmds| group to "nvim.exrc".
+• todo
 
 EXPERIMENTS
 
 • todo
 
-LUA
-
-• |vim.net.request()| does not set the response body to `true` if an output
-  buffer is supplied.
-
 LSP
 
-• |vim.lsp.buf.selection_range()| now accepts an integer which specifies its
-  direction, rather than a string `'outer'` or `'inner'`.
+• todo
+
+LUA
+
+
+• vim.pos, vim.range always require the `buf` parameter.
 
 DIAGNOSTICS
 
-• |vim.diagnostic.Opts.Status|.text was removed in favour of
-  |vim.diagnostic.Opts.Status|.format.
+• todo
 
 OPTIONS
 
-• `'completefuzzycollect'` and `'isexpand'` have been removed.
+• todo
 
 TREESITTER
 
@@ -51,11 +49,12 @@ TREESITTER
 
 UI
 
-• `progress` attribute removed from |ui-messages| msg_show event
+• todo
 
 VIMSCRIPT
 
-• `complete_match()` has been removed.
+• todo
+
 
 ==============================================================================
 BREAKING CHANGES                                                *news-breaking*
@@ -67,7 +66,6 @@ API
 • |nvim_create_autocmd()|, |nvim_exec_autocmds()| and |nvim_clear_autocmds()|
   no longer treat an empty non-nil pattern as nil.
 • |nvim_clear_autocmds()| no longer treats an empty array event as nil.
-• `stdpath("log")` moved to `stdpath("state")/logs`.
 
 BUILD
 
@@ -79,7 +77,7 @@ DIAGNOSTICS
 
 EDITOR
 
-• todo
+• `stdpath("log")` moved to `stdpath("state")/logs`.
 
 EVENTS
 
@@ -126,9 +124,7 @@ API
 
 • |vim.lsp.buf.declaration()|, |vim.lsp.buf.definition()|, |vim.lsp.buf.definition()|,
   and |vim.lsp.buf.implementation()| now follows 'switchbuf'.
-
-• |vim.net.request()| opts field now accepts a headers table, with custom
-header support.
+• |nvim_set_hl()| supports "font" key.
 
 BUILD
 
@@ -144,7 +140,7 @@ DIAGNOSTICS
 
 EDITOR
 
-• |:log| for opening log files
+• |:log| opens log files.
 
 EVENTS
 
@@ -158,18 +154,20 @@ LSP
 
 • LSP capabilities:
   • `textDocument/foo` …
-    https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_codeLens
+    https://microsoft.github.io/language-server-protocol/specification/#textDocument_foo
   • `textDocument/bar` …
-    https://microsoft.github.io/language-server-protocol/specification/#textDocument_colorPresentation
+    https://microsoft.github.io/language-server-protocol/specification/#textDocument_bar
+• |vim.lsp.buf.declaration()|, |vim.lsp.buf.definition()|, |vim.lsp.buf.definition()|,
+  and |vim.lsp.buf.implementation()| now follows 'switchbuf'.
 • Support for nested snippets.
 
 LUA
 
+• |vim.net.request()| can specify custom headers by passing `opts.headers`.
 • |vim.filetype.inspect()| returns a copy of the internal tables used for
   filetype detection.
 • Added `__eq` metamethod to |vim.VersionRange|. 2 distinct but representing
 the same range instances now compare equal.
-
 
 OPTIONS
 
