@@ -359,7 +359,7 @@ numbers. To disambiguate these cases, we define:
 3. Table with string keys, at least one of which contains NUL byte, is also
    considered to be a dictionary, but this time it is converted to
    a |msgpack-special-map|.
-                                                             *lua-special-tbl*
+                                     *lua-special-tbl* *E5100* *E5101* *E5102*
 4. Table with `vim.type_idx` key may be a dictionary, a list or floating-point
    value:
    - `{[vim.type_idx]=vim.types.float, [vim.val_idx]=1}` is converted to
@@ -1230,7 +1230,7 @@ vim.wo[{winid}][{bufnr}]                                              *vim.wo*
 ==============================================================================
 Lua module: vim                                                      *lua-vim*
 
-vim.cmd({command})                                                 *vim.cmd()*
+vim.cmd({cmd})                                                     *vim.cmd()*
     Executes Vimscript (|Ex-command|s).
 
     Can be indexed with a command name to get a function, thus you can write
@@ -1267,11 +1267,11 @@ vim.cmd({command})                                                 *vim.cmd()*
 <
 
     Parameters: ~
-      • {command}  (`string|table`) Command(s) to execute.
-                   • The string form supports multiline Vimscript (alias to
-                     |nvim_exec2()|, behaves like |:source|).
-                   • The table form executes a single command (alias to
-                     |nvim_cmd()|).
+      • {cmd}  (`string|table`) Command(s) to execute.
+               • The string form supports multiline Vimscript (alias to
+                 |nvim_exec2()|, behaves like |:source|).
+               • The table form executes a single command (alias to
+                 |nvim_cmd()|).
 
     See also: ~
       • |ex-cmd-index|
