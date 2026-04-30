@@ -85,15 +85,14 @@ EVENTS
 
 • |BufModifiedSet| has been removed. Use the |OptionSet| event with pattern
   "modified" instead.
-• todo
 
 LSP
 
-• todo
+• `client.attached_buffers[buf]` now stores `languageId` string (was boolean).
 
 LUA
 
-• Added `__eq` metamethod to |vim.VersionRange|.
+• todo
 
 OPTIONS
 
@@ -225,7 +224,7 @@ UI
 VIMSCRIPT
 
 • |v:exitreason| is set before |QuitPre|.
-• |v:starttime| is the process start time (nanoseconds from UNIX epoch).
+• |v:starttime| is the process start time (nanoseconds since UNIX epoch).
 
 ==============================================================================
 CHANGED FEATURES                                                 *news-changed*
