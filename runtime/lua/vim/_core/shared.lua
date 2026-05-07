@@ -376,7 +376,6 @@ end
 
 vim.list = {}
 
---- Returns a `key` function with per-call memoization.
 ---@generic T
 ---@param key? string|fun(val: T): any
 ---@return fun(v: T): any
@@ -393,28 +392,11 @@ local function make_key_fn(key)
     local field = key
     ---@param v any
     key = function(v)
-      return v and v[field] or nil
+      return v and v[field]
     end
   end
 
-  -- Keep memoized keys local to one list operation to avoid stale results.
-  local cache = {} --- @type table<any,any>
-
-  return function(v)
-    if v == nil then
-      return key(v)
-    end
-
-    local cached = cache[v]
-    if cached ~= nil then
-      -- Use `vim.NIL` to remember that `key(v)` returned `nil`.
-      return cached == vim.NIL and nil or cached
-    end
-
-    local result = key(v)
-    cache[v] = result == nil and vim.NIL or result
-    return result
-  end
+  return key
 end
 
 --- Removes duplicate values from a |lua-list| in-place.
@@ -425,7 +407,6 @@ end
 --- Accepts an optional `key` argument, which if provided is called for each
 --- value in the list to compute a hash key for uniqueness comparison.
 --- If `key` is a string, it is used as the field name to index each value.
---- Key results are memoized per call.
 --- This is useful for deduplicating table values or complex objects.
 --- If `key` returns `nil` for a value, that value will be considered unique,
 --- even if multiple values return `nil`.
@@ -488,7 +469,6 @@ end
 ---
 --- Optional, compare the return value instead of the {val} itself if provided.
 --- If a string, index each value by this field name.
---- Key results are memoized per call.
 ---@field key? string|fun(val: any): any
 ---
 --- Specifies the search variant.
@@ -1004,6 +984,15 @@ function vim.islist(t)
   end
 
   return true
+end
+
+--- Tests if `t` is `nil` or |vim.NIL|.
+---
+--- @since 15
+--- @param t? any
+--- @return boolean `true` if `nil` or |vim.NIL|, else `false`.
+function vim.isnil(t)
+  return t == nil or t == vim.NIL
 end
 
 --- Counts the number of non-nil values in table `t`.
@@ -1582,7 +1571,7 @@ local get_context_state = function(context)
 
       -- Do not override already set state and fall back to `vim.NIL` for
       -- state `nil` values (which still needs restoring later)
-      res[sc][name] = vim.F.if_nil(res[sc][name], vim[sc][name], vim.NIL)
+      res[sc][name] = vim.nonnil(res[sc][name], vim[sc][name], vim.NIL)
 
       -- Always track global option value to properly restore later.
       -- This matters for at least `o` and `wo` (which might set either/both
@@ -1757,5 +1746,50 @@ end
 
 -- Use max 32-bit signed int value to avoid overflow on 32-bit systems. #31633
 vim._maxint = 2 ^ 32 - 1
+
+--- Returns the first argument which is not nil.
+---
+--- If all arguments are nil, returns nil.
+---
+--- Example:
+---
+--- ```lua
+--- local a = nil
+--- local b = nil
+--- local c = 42
+--- local d = true
+--- assert(vim.nonnil(a, b, c, d) == 42)
+--- ```
+---
+--- @since 15
+--- @generic T
+--- @param ... T
+--- @return T
+function vim.nonnil(...)
+  local nargs = select('#', ...)
+  for i = 1, nargs do
+    local v = select(i, ...)
+    if v ~= nil then
+      return v
+    end
+  end
+  return nil
+end
+
+--- Calls the function `fn` in `protected mode` like |pcall()|, but returns
+--- `nil` on error.
+---
+--- @since 15
+--- @generic T
+--- @param fn fun(...):T
+--- @param ... any?
+--- @return T ...
+function vim.npcall(fn, ...)
+  return (function(success, ...)
+    if success then
+      return ...
+    end
+  end)(pcall(fn, ...))
+end
 
 return vim
