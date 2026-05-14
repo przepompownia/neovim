@@ -383,6 +383,16 @@ describe('messages2', function()
     ]])
   end)
 
+  it('shell cmd stdout in Visual mode', function()
+    set_msg_target_zero_ch()
+    feed([[v:w ! echo -n 1111<CR>]])
+    screen:expect([[
+      ^                                                     |
+      {1:~                                                    }|*12
+      {1:~                                                 }{4:1111}|
+    ]])
+  end)
+
   it('empty kind after message that does not flush immediately', function()
     command('echon "foo" | echo')
     screen:expect([[

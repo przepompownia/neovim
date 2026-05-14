@@ -1,1 +1,0 @@
-return "fetch new 2"
