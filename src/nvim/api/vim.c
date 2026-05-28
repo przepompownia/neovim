@@ -2401,7 +2401,7 @@ static void redraw_status(win_T *wp, Dict(redraw) *opts, bool *flush)
 
   // Flush later in case winbar was just hidden or shown for the first time, or
   // statuscolumn is being drawn.
-  if (wp->w_lines_valid == 0 || wp->w_grid.row_offset != old_row_offset) {
+  if ((!wp->w_config.hide && wp->w_lines_valid == 0) || wp->w_grid.row_offset != old_row_offset) {
     *flush = true;
   }
 

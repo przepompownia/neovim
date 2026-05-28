@@ -626,6 +626,9 @@ int update_screen(void)
   FOR_ALL_WINDOWS_IN_TAB(wp, curtab) {
     // Correct stored syntax highlighting info for changes in each displayed
     // buffer.  Each buffer must only be done once.
+    if (wp->w_config.hide && !wp->w_pos_changed) {
+      continue;
+    }
     update_window_hl(wp, type >= UPD_NOT_VALID || hl_changed);
 
     buf_T *buf = wp->w_buffer;
@@ -648,6 +651,9 @@ int update_screen(void)
   screen_search_hl.rm.regprog = NULL;
 
   FOR_ALL_WINDOWS_IN_TAB(wp, curtab) {
+    if (wp->w_config.hide && !wp->w_pos_changed) {
+      continue;
+    }
     if (wp->w_redr_type == UPD_CLEAR && wp->w_floating && wp->w_grid_alloc.chars) {
       grid_invalidate(&wp->w_grid_alloc);
       wp->w_redr_type = UPD_NOT_VALID;
@@ -682,7 +688,9 @@ int update_screen(void)
   // connectors overwrite vsep/hsep characters regardless of which windows were redrawn.
   if (did_one) {
     FOR_ALL_WINDOWS_IN_TAB(wp, curtab) {
-      draw_sep_connectors_win(wp);
+      if (!wp->w_config.hide || wp->w_pos_changed) {
+        draw_sep_connectors_win(wp);
+      }
     }
   }
 
