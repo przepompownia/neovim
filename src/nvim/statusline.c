@@ -231,6 +231,10 @@ static void win_redr_custom(win_T *wp, bool draw_winbar, bool draw_ruler, bool u
 
   ScreenGrid *grid = wp && wp->w_floating && !is_stl_global ? &wp->w_grid_alloc : &default_grid;
 
+  if (!is_stl_global && wp != NULL && wp->w_config.hide) {
+    return;  // unnecessary
+  }
+
   // There is a tiny chance that this gets called recursively: When
   // redrawing a status line triggers redrawing the ruler or tabline.
   // Avoid trouble by not allowing recursion.
