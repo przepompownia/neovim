@@ -1241,6 +1241,47 @@ describe('vim.lsp.completion: protocol', function()
     end)
     t.matches('items=null', err)
   end)
+
+  it('re-queries an empty incomplete list until items arrive #40096', function()
+    exec_lua(function()
+      local requests = 0
+      local server = _G._create_server({
+        capabilities = {
+          completionProvider = { triggerCharacters = { 'h' } },
+        },
+        handlers = {
+          ['textDocument/completion'] = function(_, _, callback)
+            requests = requests + 1
+            if requests == 1 then
+              callback(nil, { isIncomplete = true, items = {} })
+            else
+              callback(nil, { isIncomplete = false, items = { { label = 'hello' } } })
+            end
+          end,
+        },
+      })
+      local bufnr = vim.api.nvim_get_current_buf()
+      vim.api.nvim_win_set_buf(0, bufnr)
+      vim.lsp.start({
+        name = 'dummy',
+        cmd = server.cmd,
+        on_attach = function(client, bufnr0)
+          vim.lsp.completion.enable(true, client.id, bufnr0, { autotrigger = true })
+        end,
+      })
+    end)
+    feed('ih')
+    assert_matches(function(matches)
+      eq({}, matches)
+    end)
+
+    exec_lua('_G.capture = {}')
+    feed('e')
+    assert_matches(function(matches)
+      eq(1, #matches)
+      eq('hello', matches[1].word)
+    end)
+  end)
 end)
 
 describe('vim.lsp.completion: integration', function()
