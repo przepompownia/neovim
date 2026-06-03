@@ -68,6 +68,7 @@ local Context = {
   last_request_time = nil, --- @type integer?
   pending_requests = {}, --- @type function[]
   isIncomplete = false,
+  empty_incomplete = false,
   -- Handles "completionItem/resolve".
   resolve_handler = nil, --- @type CompletionResolver?
 }
@@ -85,6 +86,7 @@ end
 function Context:reset()
   -- Note that the cursor isn't reset here, it needs to survive a `CompleteDone` event.
   self.isIncomplete = false
+  self.empty_incomplete = false
   self.last_request_time = nil
   self:cancel_pending()
   if self.resolve_handler then
@@ -969,6 +971,7 @@ local function trigger(bufnr, clients, ctx)
 
     Context.pending_requests = {}
     Context.isIncomplete = false
+    Context.empty_incomplete = false
 
     local new_cursor_row, cursor_col = unpack(api.nvim_win_get_cursor(win)) --- @type integer, integer
     local row_changed = new_cursor_row ~= cursor_row
@@ -1002,23 +1005,25 @@ local function trigger(bufnr, clients, ctx)
             client and client.name or 'UNKNOWN'
           )
         )
-      elseif not vim.isnil(result) and #(result.items or result) > 0 then
+      elseif not vim.isnil(result) then
         Context.isIncomplete = Context.isIncomplete or result.isIncomplete
-        local encoding = client and client.offset_encoding or 'utf-16'
-        local client_matches, tmp_server_start_boundary
-        client_matches, tmp_server_start_boundary = M._convert_results(
-          line,
-          cursor_row - 1,
-          cursor_col,
-          client_id,
-          word_boundary,
-          nil,
-          result,
-          encoding
-        )
+        if #(result.items or result) > 0 then
+          local encoding = client and client.offset_encoding or 'utf-16'
+          local client_matches, tmp_server_start_boundary
+          client_matches, tmp_server_start_boundary = M._convert_results(
+            line,
+            cursor_row - 1,
+            cursor_col,
+            client_id,
+            word_boundary,
+            nil,
+            result,
+            encoding
+          )
 
-        server_start_boundary = tmp_server_start_boundary or server_start_boundary
-        vim.list_extend(matches, client_matches)
+          server_start_boundary = tmp_server_start_boundary or server_start_boundary
+          vim.list_extend(matches, client_matches)
+        end
       end
     end
 
@@ -1049,6 +1054,7 @@ local function trigger(bufnr, clients, ctx)
       end
     end
     vim.fn.complete(start_col, matches)
+    Context.empty_incomplete = Context.isIncomplete and #matches == 0
   end)
 
   table.insert(Context.pending_requests, cancel_request)
@@ -1056,28 +1062,31 @@ end
 
 --- @param handle vim.lsp.completion.BufHandle
 local function on_insert_char_pre(handle)
-  if vim.fn.pumvisible() ~= 0 then
-    if Context.isIncomplete then
-      reset_timer()
+  local pum_visible = vim.fn.pumvisible() ~= 0
+  if (pum_visible and Context.isIncomplete) or Context.empty_incomplete then
+    reset_timer()
 
-      local debounce_ms = adaptive_debounce(Context.last_request_time, rtt_ms)
-      local ctx = { triggerKind = protocol.CompletionTriggerKind.TriggerForIncompleteCompletions }
-      if debounce_ms == 0 then
-        vim.schedule(function()
+    local debounce_ms = adaptive_debounce(Context.last_request_time, rtt_ms)
+    local ctx = { triggerKind = protocol.CompletionTriggerKind.TriggerForIncompleteCompletions }
+    if debounce_ms == 0 then
+      vim.schedule(function()
+        M.get({ ctx = ctx })
+      end)
+    else
+      completion_timer = new_timer()
+      completion_timer:start(
+        math.floor(debounce_ms),
+        0,
+        vim.schedule_wrap(function()
           M.get({ ctx = ctx })
         end)
-      else
-        completion_timer = new_timer()
-        completion_timer:start(
-          math.floor(debounce_ms),
-          0,
-          vim.schedule_wrap(function()
-            M.get({ ctx = ctx })
-          end)
-        )
-      end
+      )
     end
 
+    return
+  end
+
+  if pum_visible then
     return
   end
 
