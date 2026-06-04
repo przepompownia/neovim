@@ -1242,21 +1242,17 @@ describe('vim.lsp.completion: protocol', function()
     t.matches('items=null', err)
   end)
 
-  it('re-queries an empty incomplete list until items arrive #40096', function()
+  it('keeps requerying while the completion list is incomplete #40096', function()
     exec_lua(function()
-      local requests = 0
+      _G.contexts = {}
       local server = _G._create_server({
         capabilities = {
           completionProvider = { triggerCharacters = { 'h' } },
         },
         handlers = {
-          ['textDocument/completion'] = function(_, _, callback)
-            requests = requests + 1
-            if requests == 1 then
-              callback(nil, { isIncomplete = true, items = {} })
-            else
-              callback(nil, { isIncomplete = false, items = { { label = 'hello' } } })
-            end
+          ['textDocument/completion'] = function(_, params, callback)
+            _G.contexts[#_G.contexts + 1] = params.context
+            callback(nil, { isIncomplete = true, items = { { label = 'hello' } } })
           end,
         },
       })
@@ -1272,15 +1268,16 @@ describe('vim.lsp.completion: protocol', function()
     end)
     feed('ih')
     assert_matches(function(matches)
-      eq({}, matches)
+      eq('hello', matches[1].word)
     end)
+    eq({ triggerKind = 2, triggerCharacter = 'h' }, exec_lua('return _G.contexts[1]'))
 
     exec_lua('_G.capture = {}')
     feed('e')
     assert_matches(function(matches)
-      eq(1, #matches)
       eq('hello', matches[1].word)
     end)
+    eq({ triggerKind = 3 }, exec_lua('return _G.contexts[2]'))
   end)
 end)
 

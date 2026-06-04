@@ -939,6 +939,8 @@ local function register_completedone(bufnr)
     local reason = api.nvim_get_vvar('event').reason ---@type string
     if reason == 'accept' then
       on_complete_done()
+    elseif reason == 'cancel' then
+      Context:reset()
     end
   end)
 
@@ -1062,8 +1064,7 @@ end
 
 --- @param handle vim.lsp.completion.BufHandle
 local function on_insert_char_pre(handle)
-  local pum_visible = vim.fn.pumvisible() ~= 0
-  if (pum_visible and Context.isIncomplete) or Context.empty_incomplete then
+  if Context.isIncomplete then
     reset_timer()
 
     local debounce_ms = adaptive_debounce(Context.last_request_time, rtt_ms)
@@ -1086,7 +1087,7 @@ local function on_insert_char_pre(handle)
     return
   end
 
-  if pum_visible then
+  if vim.fn.pumvisible() ~= 0 then
     return
   end
 
